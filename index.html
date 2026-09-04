@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Marble Nations Cup — 64 flag marbles, one knockout tournament.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏁</text></svg>">
+<style>body{margin:0;background:#0e1524}</style>
+</head>
+<body>
+<title>Marble Nations Cup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#0e1524; --bg2:#0a101c; --panel:#172033; --panel2:#1e2a40; --line:#2a3650;
+  --text:#eef2f8; --muted:#8c9ab4; --gold:#f2b84b; --gold2:#ffd784; --teal:#34d1bf;
+  --good:#4fd48a; --out:#f0655b; --tie:#b78cff;
+  --display:"Bebas Neue","Oswald","Impact",sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45;overflow-x:hidden}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hidden{display:none!important}
+
+/* top bar */
+#bar{display:flex;align-items:center;gap:18px;padding:8px 18px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+#bar .logo{font-family:var(--display);font-size:28px;letter-spacing:.06em;line-height:1;color:var(--gold);display:flex;align-items:center;gap:10px}
+#bar .logo i{display:inline-block;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff 0,var(--teal) 30%,#0f6e66 100%);box-shadow:0 0 0 2px #0b2a2a inset}
+.stage-info{display:flex;gap:14px;align-items:baseline;font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.stage-info b{color:var(--text);font-weight:500}
+.spacer{flex:1}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:12px}
+.chip canvas{width:24px;height:16px;border-radius:2px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--panel2);border-color:#3a4a6a}
+.btn.primary{background:var(--gold);color:#1a1405;border-color:var(--gold);font-family:var(--display);font-size:20px;letter-spacing:.06em;padding:8px 22px}
+.btn.primary:hover{background:var(--gold2);border-color:var(--gold2)}
+.btn.primary:disabled{opacity:.4;cursor:not-allowed}
+.btn.active{border-color:var(--teal);color:var(--teal)}
+.btn.small{padding:4px 9px;font-size:12px}
+
+/* pick screen */
+#pick{max-width:1100px;margin:0 auto;padding:28px 18px 60px}
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center;margin-bottom:26px}
+.hero h1{font-family:var(--display);font-size:clamp(48px,7vw,84px);line-height:.92;margin:0 0 10px;letter-spacing:.02em;text-wrap:balance}
+.hero h1 span{color:var(--gold)}
+.hero p{color:var(--muted);max-width:52ch;margin:0 0 14px;font-size:15px}
+.rules{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 18px;font-size:13px;color:var(--muted)}
+.rules div b{display:block;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+#preview{width:100%;max-width:380px;aspect-ratio:1;justify-self:center;display:block}
+.pick-head{display:flex;align-items:center;gap:14px;margin:10px 0 12px;flex-wrap:wrap}
+.pick-head h2{font-family:var(--display);font-size:26px;margin:0;letter-spacing:.05em;font-weight:400}
+.pick-head .sel{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.pick-head .sel b{color:var(--gold);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px 8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;transition:transform .12s,border-color .12s,background .12s}
+.tile:hover{transform:translateY(-2px);border-color:#3a4a6a;background:var(--panel2)}
+.tile.selected{border-color:var(--gold);background:#2a2712;box-shadow:0 0 0 1px var(--gold) inset}
+.tile canvas{width:54px;height:36px;border-radius:3px;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.tile span{font-size:12px;text-align:center;line-height:1.2}
+.start-row{position:sticky;bottom:0;display:flex;justify-content:center;gap:12px;padding:14px 0 6px;background:linear-gradient(transparent,var(--bg) 40%)}
+
+/* race screen */
+#race{display:grid;grid-template-columns:1fr 270px;gap:0;height:calc(100vh - 54px);min-height:520px}
+#stage{position:relative;background:var(--bg2);overflow:hidden}
+#cv{display:block;width:100%;height:100%}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#overlay .count{font-family:var(--display);font-size:180px;color:var(--gold);text-shadow:0 0 40px rgba(242,184,75,.4);animation:pop .6s ease-out}
+@keyframes pop{from{transform:scale(1.5);opacity:0}to{transform:scale(1);opacity:1}}
+#hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:auto}
+#hud .btn{backdrop-filter:blur(4px);background:rgba(23,32,51,.8)}
+#heatTitle{position:absolute;right:12px;top:12px;text-align:right;pointer-events:none}
+#heatTitle .r{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#heatTitle .h{font-family:var(--display);font-size:34px;line-height:1;color:var(--text)}
+#clock{position:absolute;right:12px;bottom:12px;font-family:var(--mono);font-size:22px;color:var(--gold);font-variant-numeric:tabular-nums;pointer-events:none}
+#side{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#side h3{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0;padding:12px 14px 8px;font-weight:500}
+#standings{list-style:none;margin:0;padding:0 8px;display:flex;flex-direction:column;gap:4px;flex:1;overflow:auto}
+#standings li{display:grid;grid-template-columns:22px 34px 1fr auto;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:var(--bg);border:1px solid transparent;transition:background .2s}
+#standings li.me{border-color:var(--gold)}
+#standings li.done{background:#13251d}
+#standings li.dead{opacity:.45}#standings li.dead .t{color:var(--out)}
+#standings li .pos{font-family:var(--display);font-size:20px;color:var(--muted);text-align:center;line-height:1}
+#standings li canvas{width:34px;height:23px;border-radius:2px}
+#standings li .n{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#standings li .n small{display:block;height:3px;background:var(--line);border-radius:2px;margin-top:3px;overflow:hidden}
+#standings li .n small i{display:block;height:100%;background:var(--teal);width:0}
+#standings li .t{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+#standings li.done .t{color:var(--good)}
+#legend{padding:10px 14px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);font-family:var(--mono);letter-spacing:.04em}
+
+/* results modal */
+#results{position:absolute;inset:0;background:rgba(8,12,22,.78);display:flex;align-items:center;justify-content:center;padding:18px;pointer-events:auto;backdrop-filter:blur(3px)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:min(560px,100%);max-height:100%;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.card header{padding:16px 20px 10px;border-bottom:1px solid var(--line)}
+.card header .r{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.card header h2{font-family:var(--display);font-size:34px;margin:0;line-height:1;letter-spacing:.03em;font-weight:400}
+.res{list-style:none;margin:0;padding:8px}
+.res li{display:grid;grid-template-columns:26px 40px 1fr auto auto;align-items:center;gap:10px;padding:7px 10px;border-radius:8px}
+.res li.adv{background:#13251d}
+.res li.out{opacity:.72}
+.res li.me{outline:1px solid var(--gold)}
+.res li .pos{font-family:var(--display);font-size:22px;color:var(--muted);text-align:center}
+.res li canvas{width:40px;height:27px;border-radius:2px}
+.res li .n{font-size:14px;font-weight:500}
+.res li .n em{display:block;font-style:normal;font-size:11px;color:var(--tie);font-family:var(--mono)}
+.res li .t{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.tag.adv{background:rgba(79,212,138,.15);color:var(--good)}
+.tag.out{background:rgba(240,101,91,.15);color:var(--out)}
+.tag.win{background:rgba(242,184,75,.18);color:var(--gold)}
+.card footer{display:flex;align-items:center;gap:12px;padding:12px 16px 16px;border-top:1px solid var(--line)}
+.card footer .auto{font-family:var(--mono);font-size:11px;color:var(--muted);flex:1}
+.tiebox{margin:0 8px 8px;padding:8px 12px;border:1px dashed var(--tie);border-radius:8px;font-size:12px;color:var(--muted)}
+.tiebox b{color:var(--tie);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px}
+
+/* bracket */
+#bracket{padding:20px 18px 60px;max-width:1400px;margin:0 auto}
+#bracket .top{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+#bracket h2{font-family:var(--display);font-size:32px;margin:0;letter-spacing:.04em;font-weight:400}
+.rounds{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;overflow-x:auto}
+.round h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:500}
+.heat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px}
+.heat.current{border-color:var(--gold)}
+.heat.pending{opacity:.55}
+.heat .hn{font-family:var(--display);font-size:16px;letter-spacing:.06em;color:var(--muted);margin:0 0 6px 4px}
+.heat .row{display:flex;align-items:center;gap:7px;padding:2px 4px;font-size:12px}
+.heat .row canvas{width:22px;height:15px;border-radius:2px;flex:none}
+.heat .row.adv{color:var(--text)}
+.heat .row.out{color:var(--muted);text-decoration:line-through;opacity:.7}
+.heat .row.me span{color:var(--gold)}
+.heat .row .p{font-family:var(--mono);font-size:10px;color:var(--muted);width:14px}
+
+/* champion */
+#champion{min-height:calc(100vh - 54px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 18px;text-align:center;gap:14px}
+#champion .r{font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-size:12px}
+#champion h1{font-family:var(--display);font-size:clamp(56px,10vw,120px);line-height:.9;margin:0;color:var(--gold)}
+#champion canvas.big{width:180px;height:180px;border-radius:50%;box-shadow:0 20px 60px rgba(242,184,75,.25)}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:min(560px,100%);align-items:end;margin-top:10px}
+.podium div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.podium div:nth-child(2){order:-1}
+.podium div.first{border-color:var(--gold);padding-top:22px}
+.podium canvas{width:44px;height:30px;border-radius:2px}
+.podium b{font-family:var(--display);font-size:26px;color:var(--muted)}
+.podium span{font-size:13px}
+
+@media (max-width:820px){
+  #race{grid-template-columns:1fr;height:auto}
+  #stage{height:70vh}
+  #side{border-left:0;border-top:1px solid var(--line);max-height:260px}
+  .hero{grid-template-columns:1fr}
+  #preview{max-width:240px}
+  .rounds{grid-template-columns:repeat(4,240px)}
+  #bar .logo{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="bar">
+  <div class="logo"><i></i>Marble Nations Cup</div>
+  <div class="stage-info"><span><b id="biRound">Tournament</b></span><span>Heat <b id="biHeat">—</b></span></div>
+  <div class="spacer"></div>
+  <div class="chip hidden" id="meChip"><canvas width="48" height="32"></canvas><span></span></div>
+  <button class="btn" id="btnBracket">Bracket</button>
+  <button class="btn" id="btnSound" aria-pressed="true">Sound: on</button>
+</div>
+
+<section id="pick">
+  <div class="hero">
+    <div>
+      <h1>Sixty-four nations.<br>One <span>marble</span> survives.</h1>
+      <p>A knockout tournament of flag marbles racing down a gauntlet of pegs, ramps, spinners and funnels. Pick your country, then watch the field get cut in half, heat by heat, until one champion rolls across the line.</p>
+      <div class="rules">
+        <div><b>Format</b>15 heats of 8 marbles. Top 4 advance from each heat until the Grand Final.</div>
+        <div><b>Physics</b>Real 16 mm glass marbles on a 4 m course under 9.81 m/s² gravity, with measured bounce, rolling and friction. No two races run the same.</div>
+        <div><b>Photo finishes</b>Marbles within 100 ms of each other count as a tie, and a tie is settled by country stats.</div>
+        <div><b>Hazards</b>A hydraulic crusher, a saw blade and a trapdoor sit on the course. Roughly one marble in twenty is destroyed before the line and is out of the heat.</div>
+        <div><b>Tie-breakers</b>Population → land area → highest point → shared borders → lowest crime index → coin flip.</div>
+      </div>
+    </div>
+    <canvas id="preview" width="400" height="400"></canvas>
+  </div>
+  <div class="pick-head">
+    <h2>Choose your nation</h2>
+    <span class="sel">Selected: <b id="selName">none yet</b></span>
+    <span class="spacer"></span>
+    <button class="btn small" id="btnRandom">Pick for me</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="start-row">
+    <button class="btn primary" id="btnStart" disabled>Start tournament</button>
+  </div>
+</section>
+
+<section id="race" class="hidden">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="hud">
+      <button class="btn small" id="btnFollow">Follow: leader</button>
+      <button class="btn small" id="btnSpeed">Speed: default</button>
+      <button class="btn small" id="btnSkip">Skip to results</button>
+    </div>
+    <div id="heatTitle"><div class="r" id="htRound"></div><div class="h" id="htHeat"></div></div>
+    <div id="clock">0.00</div>
+    <div id="overlay"></div>
+  </div>
+  <aside id="side">
+    <h3>Live standings</h3>
+    <ol id="standings"></ol>
+    <div id="legend">Top 4 advance · bottom 4 out</div>
+  </aside>
+</section>
+
+<section id="bracket" class="hidden">
+  <div class="top">
+    <h2>Tournament bracket</h2>
+    <span class="spacer"></span>
+    <button class="btn" id="btnBackRace">Back to the race</button>
+  </div>
+  <div class="rounds" id="rounds"></div>
+</section>
+
+<section id="champion" class="hidden">
+  <div class="r">Marble Nations Cup champion</div>
+  <canvas class="big" width="256" height="256" id="champBall"></canvas>
+  <h1 id="champName"></h1>
+  <div class="r" id="champNote"></div>
+  <div class="podium" id="podium"></div>
+  <div style="display:flex;gap:12px;margin-top:16px">
+    <button class="btn" id="btnChampBracket">See full bracket</button>
+    <button class="btn primary" id="btnAgain">New tournament</button>
+  </div>
+</section>
+
+<script>
+'use strict';
+/* ================= COUNTRY DATA =================
+   pop: millions · area: thousand km² · high: highest point (m)
+   borders: land neighbours · crime: crime index (lower is safer) */
+const COUNTRIES = [
+ ['CA','Canada',40.1,9985,5959,1,45],['US','United States',335,9834,6190,2,49],['MX','Mexico',129,1964,5636,3,54],
+ ['BR','Brazil',216,8516,2995,10,66],['AR','Argentina',46,2780,6961,5,63],['CO','Colombia',52,1142,5775,5,60],
+ ['CL','Chile',19.6,756,6893,3,54],['PE','Peru',34,1285,6768,5,68],['GB','United Kingdom',67.7,244,1345,1,47],
+ ['FR','France',68,552,4809,8,55],['DE','Germany',84,358,2962,9,38],['IT','Italy',59,302,4810,6,47],
+ ['ES','Spain',48,506,3715,5,34],['PT','Portugal',10.4,92,2351,1,31],['NL','Netherlands',17.9,42,322,2,27],
+ ['BE','Belgium',11.7,31,694,4,45],['CH','Switzerland',8.9,41,4634,5,24],['AT','Austria',9.1,84,3798,8,27],
+ ['SE','Sweden',10.5,450,2097,2,48],['NO','Norway',5.5,385,2469,3,33],['DK','Denmark',5.9,43,171,1,26],
+ ['FI','Finland',5.6,338,1324,3,26],['IS','Iceland',0.39,103,2110,0,24],['IE','Ireland',5.2,70,1039,1,46],
+ ['PL','Poland',37,313,2499,7,29],['CZ','Czechia',10.9,79,1603,4,26],['GR','Greece',10.4,132,2917,4,44],
+ ['TR','Türkiye',85,784,5137,8,41],['UA','Ukraine',37,604,2061,7,48],['RU','Russia',144,17098,5642,14,40],
+ ['HU','Hungary',9.6,93,1014,7,32],['RO','Romania',19,238,2544,5,30],['HR','Croatia',3.9,57,1831,5,24],
+ ['RS','Serbia',6.7,88,2169,8,36],['JP','Japan',124,378,3776,0,22],['KR','South Korea',51.7,100,1947,1,27],
+ ['CN','China',1410,9597,8849,14,29],['IN','India',1430,3287,8586,6,44],['PK','Pakistan',240,882,8611,4,44],
+ ['BD','Bangladesh',172,148,1064,2,60],['ID','Indonesia',277,1905,4884,3,46],['MY','Malaysia',34,331,4095,3,55],
+ ['SG','Singapore',5.9,0.73,164,0,24],['TH','Thailand',71.8,513,2565,4,40],['VN','Vietnam',99,331,3147,3,43],
+ ['PH','Philippines',117,300,2954,0,42],['AU','Australia',26.5,7692,2228,0,46],['NZ','New Zealand',5.2,268,3724,0,43],
+ ['SA','Saudi Arabia',36,2150,3000,7,26],['AE','United Arab Emirates',9.5,84,1934,2,16],['IL','Israel',9.8,22,1208,4,33],
+ ['EG','Egypt',106,1002,2629,4,47],['ZA','South Africa',60,1221,3450,6,76],['NG','Nigeria',224,924,2419,4,65],
+ ['KE','Kenya',55,580,5199,5,59],['ET','Ethiopia',126,1104,4550,6,43],['MA','Morocco',37.8,447,4167,3,47],
+ ['GH','Ghana',34,239,885,3,46],['IR','Iran',89,1648,5610,7,49],['IQ','Iraq',45,438,3611,6,52],
+ ['JM','Jamaica',2.8,11,2256,0,67],['CU','Cuba',11,110,1974,0,44],['VE','Venezuela',28,916,4978,3,83],
+ ['KZ','Kazakhstan',20,2725,7010,5,39]
+].map(a=>({code:a[0],name:a[1],pop:a[2],area:a[3],high:a[4],borders:a[5],crime:a[6]}));
+
+const TIEBREAKERS = [
+ {key:'pop',label:'population',dir:1,fmt:v=>v>=1?v.toFixed(v<10?1:0)+'M':(v*1000).toFixed(0)+'K'},
+ {key:'area',label:'land area',dir:1,fmt:v=>v>=1?Math.round(v*1000).toLocaleString()+' km²':Math.round(v*1000)+' km²'},
+ {key:'high',label:'highest point',dir:1,fmt:v=>v.toLocaleString()+' m'},
+ {key:'borders',label:'shared borders',dir:1,fmt:v=>v+(v===1?' neighbour':' neighbours')},
+ {key:'crime',label:'lowest crime index',dir:-1,fmt:v=>'index '+v},
+];
+
+/* ================= FLAG ART =================
+   Real flag artwork (country-flag-icons, MIT) inlined as SVG and rasterised once per size. */
+const FLAG_SVG={"AE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#009e49\" d=\"M0 0h513v114H0z\"/><path d=\"M0 228h513v114H0z\"/><path fill=\"#ce1126\" d=\"M0 0h171v342H0z\"/></svg>","AR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h512v342H0z\"/><path fill=\"#338AF3\" d=\"M0 0h512v114H0zM0 228h512v114H0z\"/><circle fill=\"#FFDA44\" stroke=\"#d6ab00\" stroke-width=\"5\" cx=\"256.5\" cy=\"171\" r=\"40\"/></svg>","AT":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 114h513v114H0z\"/><path fill=\"#D80027\" d=\"M0 0h513v114H0zM0 228h513v114H0z\"/></svg>","AU":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#10338c\" d=\"M0 0h513v342H0z\"/><g fill=\"#FFF\"><path d=\"M222.2 170.7c.3-.3.5-.6.8-.9-.2.3-.5.6-.8.9zM188 212.6l11 22.9 24.7-5.7-11 22.8 19.9 15.8-24.8 5.6.1 25.4-19.9-15.9-19.8 15.9.1-25.4-24.8-5.6 19.9-15.8-11.1-22.8 24.8 5.7zM385.9 241.1l5.2 10.9 11.8-2.7-5.3 10.9 9.5 7.5-11.8 2.6v12.2l-9.4-7.6-9.5 7.6.1-12.2-11.8-2.6 9.5-7.5-5.3-10.9 11.8 2.7zM337.3 125.1l5.2 10.9 11.8-2.7-5.3 10.9 9.5 7.5-11.8 2.7v12.1l-9.4-7.6-9.5 7.6.1-12.1-11.9-2.7 9.5-7.5-5.3-10.9L332 136zM385.9 58.9l5.2 10.9 11.8-2.7-5.3 10.9 9.5 7.5-11.8 2.7v12.1l-9.4-7.6-9.5 7.6.1-12.1-11.8-2.7 9.5-7.5-5.3-10.9 11.8 2.7zM428.4 108.6l5.2 10.9 11.8-2.7-5.3 10.9 9.5 7.5-11.8 2.6V150l-9.4-7.6-9.5 7.6v-12.2l-11.8-2.6 9.5-7.5-5.3-10.9 11.8 2.7zM398 166.5l4.1 12.7h13.3l-10.8 7.8 4.2 12.7-10.8-7.9-10.8 7.9 4.1-12.7-10.7-7.8h13.3z\"/><path d=\"M254.8 0v30.6l-45.1 25.1h45.1V115h-59.1l59.1 32.8v22.9h-26.7l-73.5-40.9v40.9H99v-48.6l-87.4 48.6H-1.2v-30.6L44 115H-1.2V55.7h59.1L-1.2 22.8V0h26.7L99 40.8V0h55.6v48.6L242.1 0z\"/></g><path fill=\"#D80027\" d=\"M142.8 0h-32v69.3h-112v32h112v69.4h32v-69.4h112v-32h-112z\"/><path fill=\"#0052B4\" d=\"m154.6 115 100.2 55.7v-15.8L183 115z\"/><path fill=\"#FFF\" d=\"m154.6 115 100.2 55.7v-15.8L183 115z\"/><g fill=\"#D80027\"><path d=\"m154.6 115 100.2 55.7v-15.8L183 115zM70.7 115l-71.9 39.9v15.8L99 115z\"/></g><path fill=\"#0052B4\" d=\"M99 55.7-1.2 0v15.7l71.9 40z\"/><path fill=\"#FFF\" d=\"M99 55.7-1.2 0v15.7l71.9 40z\"/><g fill=\"#D80027\"><path d=\"M99 55.7-1.2 0v15.7l71.9 40zM183 55.7l71.8-40V0L154.6 55.7z\"/></g></svg>","BD":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 513 342\"><path fill=\"#2d6e41\" d=\"M0 85.331h513v342H0z\"/><circle fill=\"#F40B32\" cx=\"218.902\" cy=\"256.5\" r=\"115\"/></svg>","BE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#fdda25\" d=\"M0 0h513v342H0z\"/><path d=\"M0 0h171v342H0z\"/><path fill=\"#ef3340\" d=\"M342 0h171v342H342z\"/></svg>","BR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#009b3a\" d=\"M0 0h513v342H0z\"/><path fill=\"#fedf00\" d=\"m256.5 19.3 204.9 151.4L256.5 322 50.6 170.7z\"/><circle fill=\"#FFF\" cx=\"256.5\" cy=\"171\" r=\"80.4\"/><path fill=\"#002776\" d=\"M215.9 165.7c-13.9 0-27.4 2.1-40.1 6 .6 43.9 36.3 79.3 80.3 79.3 27.2 0 51.3-13.6 65.8-34.3-24.9-31-63.2-51-106-51zM334.9 186c.9-5 1.5-10.1 1.5-15.4 0-44.4-36-80.4-80.4-80.4-33.1 0-61.5 20.1-73.9 48.6 10.9-2.2 22.1-3.4 33.6-3.4 46.8.1 89 19.5 119.2 50.6z\"/></svg>","CA":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"red\"><path d=\"M0 0h142v342H0zM371 0h142v342H371zM306.5 206l50.4-25.2-25.2-12.6V143l-50.4 25.2 25.2-50.4h-25.2L256.1 80l-25.2 37.8h-25.2l25.2 50.4-50.4-25.2v25.2l-25.2 12.6 50.4 25.2-12.6 25.2h50.4V269h25.2v-37.8h50.4z\"/></g></svg>","CH":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 513 342\"><path fill=\"red\" d=\"M0 85.337h513v342H0z\"/><path fill=\"#FFF\" d=\"M356.174 222.609h-66.783v-66.783h-66.782v66.783h-66.783v66.782h66.783v66.783h66.782v-66.783h66.783z\"/></svg>","CL":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#D80027\" d=\"M0 0h513v342H0z\"/><path fill=\"#FFF\" d=\"M196 0h317v171H196z\"/><path fill=\"#0037A1\" d=\"M0 0h196v171H0z\"/><path fill=\"#FFF\" d=\"M98 24.5 113.1 71H162l-39.6 28.7 15.2 46.5L98 117.5l-39.6 28.7 15.2-46.5L34 71h48.9z\"/></svg>","CN":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#D80027\" d=\"M0 0h513v342H0z\"/><g fill=\"#FFDA44\"><path d=\"m226.8 239.2-9.7-15.6-17.9 4.4 11.9-14.1-9.7-15.6 17.1 6.9 11.8-14.1-1.3 18.4 17.1 6.9-17.9 4.4zM290.6 82l-10.1 15.4 11.6 14.3-17.7-4.8-10.1 15.5-1-18.4-17.7-4.8 17.2-6.6-1-18.4 11.6 14.3zM236.2 25.4l-2 18.3 16.8 7.6-18 3.8-2 18.3-9.2-16-17.9 3.8 12.3-13.7-9.2-15.9 16.8 7.5zM292.8 161.8l-14.9 10.9 5.8 17.5-14.9-10.8-14.9 11 5.6-17.6-14.9-10.7 18.4-.1 5.6-17.6 5.8 17.5zM115 46.3l17.3 53.5h56.2l-45.4 32.9 17.3 53.5-45.4-33-45.5 33 17.4-53.5-45.5-32.9h56.3z\"/></g></svg>","CO":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFDA44\" d=\"M0 0h513v342H0z\"/><path fill=\"#D80027\" d=\"M0 256.5h513V342H0z\"/><path fill=\"#0052B4\" d=\"M0 171h513v85.5H0z\"/></svg>","CU":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FF9811\" d=\"M0-40.8v422.9-211.4z\"/><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"#0052B4\"><path d=\"M0 0h513v68.3H0zM0 136.5h513v68.3H0zM0 273.1h513v68.3H0z\"/></g><path fill=\"#D80027\" d=\"M256 170.7 0 342V0z\"/><path fill=\"#FFF\" d=\"m86.5 111.4 12.7 39.2h41.3l-33.4 24.2 12.8 39.3-33.4-24.2-33.4 24.2 12.8-39.3-33.4-24.2h41.2z\"/></svg>","CZ":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#11457e\" d=\"M0 0h513v342H0z\"/><path fill=\"#d7141a\" d=\"M513 171v171H0l215-171z\"/><path fill=\"#FFF\" d=\"M513 0v171H215.185L0 0z\"/></svg>","DE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#D80027\" d=\"M0 0h513v342H0z\"/><path d=\"M0 0h513v114H0z\"/><path fill=\"#FFDA44\" d=\"M0 228h513v114H0z\"/></svg>","DK":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#c60c30\" d=\"M0 0h513v342H0z\"/><path fill=\"#FFF\" d=\"M190 0h-60v140H0v60h130v142h60V200h323v-60H190z\"/></svg>","EG":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#D80027\" d=\"M0 0h513v114H0z\"/><path d=\"M0 228h513v114H0z\"/><path fill=\"#C09300\" d=\"M220.3 204.4s0-58.4 4.5-64.7c3.1-4.3 16.8 5.2 22.7 4.5 0 0 4.2-7.5 4.5-12 .3-4.6-1.1-7.6-4.9-6.2 0 0-1.2-2.1.5-3.3 1.6-1.2 5.6.1 5.6.1s-.5-1 1.6-.9c2.9.2 7.2 1.4 7.4 5.6.2 3.1.3 7.7.4 8.7.7 6.8 2.7 8.7 2.7 8.7s18.4-9.2 22-5.2c3.3 3.8 4.5 64.7 4.5 64.7l-18.1-16.8 12.1 29.5s-14.4 2.4-28.9 2.4c-14.5 0-31.1-4.2-31.1-4.2l13.8-28.2-19.3 17.3z\"/></svg>","ES":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 22.5 15\"><path fill=\"#FFF\" d=\"M0 0h22.5v15H0V0z\"/><path fill=\"#D03433\" d=\"M0 0h22.5v4H0V0zm0 11h22.5v4H0v-4z\"/><path fill=\"#FBCA46\" d=\"M0 4h22.5v7H0V4z\"/><path fill=\"#FFF\" d=\"M7.8 7h1v.5h-1V7z\"/><path fill=\"#A41517\" d=\"M7.2 8.5c0 .3.3.5.6.5s.6-.2.6-.5L8.5 7H7.1l.1 1.5zM6.6 7c0-.3.2-.5.4-.5h1.5c.3 0 .5.2.5.4V7l-.1 1.5c-.1.6-.5 1-1.1 1-.6 0-1-.4-1.1-1L6.6 7z\"/><path fill=\"#A41517\" d=\"M6.8 7.5h2V8h-.5l-.5 1-.5-1h-.5v-.5zM5.3 6h1v3.5h-1V6zm4 0h1v3.5h-1V6zm-2.5-.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v.2c0 .2-.1.3-.3.3H7c-.1 0-.2-.1-.2-.2v-.3z\"/></svg>","ET":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 22.5 15\"><path fill=\"#20AA46\" d=\"M0 0h22.5v5H0V0z\"/><path fill=\"#E92F3B\" d=\"M0 10h22.5v5H0v-5z\"/><path fill=\"#FADF50\" d=\"M0 5h22.5v5H0V5z\"/><circle fill=\"#205CCA\" cx=\"11.3\" cy=\"7.5\" r=\"5.2\"/><g stroke=\"#FFDB3D\" fill=\"none\"><g stroke-width=\".5\"><path d=\"m11.3 8.8-2.1 1.5.8-2.4-2-1.5h2.5l.8-2.3.8 2.3h2.6l-2.1 1.5.8 2.4-2.1-1.5zM10.3 6.4h1.9M9.9 7.8l1.3 1M12 6.2l.7 1.8M10 7.9l.6-1.8M11 9l1.6-1.1\"/></g><g stroke-width=\".25\"><path d=\"m8.7 3.9 1.1 1.6M13.8 3.8l-1 1.6M11.3 10.1V12M8.9 8.3 7.1 9M15.5 9l-1.8-.7\"/></g></g></svg>","FI":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#2E52B2\" d=\"M513 129.3V212H203.7v130H121V212H0v-82.7h121V0h82.7v129.3z\"/></svg>","FR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#0052B4\" d=\"M0 0h171v342H0z\"/><path fill=\"#D80027\" d=\"M342 0h171v342H342z\"/></svg>","GB":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><g fill=\"#FFF\"><path d=\"M0 0h513v341.3H0V0z\"/><path d=\"M311.7 230 513 341.3v-31.5L369.3 230h-57.6zM200.3 111.3 0 0v31.5l143.7 79.8h56.6z\"/></g><g fill=\"#0052B4\"><path d=\"M393.8 230 513 295.7V230H393.8zm-82.1 0L513 341.3v-31.5L369.3 230h-57.6zm146.9 111.3-147-81.7v81.7h147zM90.3 230 0 280.2V230h90.3zm110 14.2v97.2H25.5l174.8-97.2zM118.2 111.3 0 45.6v65.7h118.2zm82.1 0L0 0v31.5l143.7 79.8h56.6zM53.4 0l147 81.7V0h-147zM421.7 111.3 513 61.1v50.2h-91.3zm-110-14.2V0h174.9L311.7 97.1z\"/></g><g fill=\"#D80027\"><path d=\"M288 0h-64v138.7H0v64h224v138.7h64V202.7h224v-64H288V0z\"/><path d=\"M311.7 230 513 341.3v-31.5L369.3 230h-57.6zM143.7 230 0 309.9v31.5L200.3 230h-56.6zM200.3 111.3 0 0v31.5l143.7 79.8h56.6zM368.3 111.3 513 31.5V0L311.7 111.3h56.6z\"/></g></svg>","GH":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFDA44\" d=\"M0 0h513v342H0z\"/><path fill=\"#D80027\" d=\"M0 0h513v114H0z\"/><path fill=\"#496E2D\" d=\"M0 228h513v114H0z\"/><path d=\"m255.9 113.8 14.1 43.4 40.4 3.2-37 26.9 19.5 40.3-37-26.9-37 26.9 14.1-43.5-36.9-26.9h45.7z\"/></svg>","GR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"#0d5eaf\"><path d=\"M0 0h513v38H0zM0 76h513v38H0zM0 152h513v38H0zM0 228h513v38H0zM0 304h513v38H0z\"/><path d=\"M0 0h190v190H0z\"/></g><g fill=\"#FFF\"><path d=\"M0 76h190v38H0z\"/><path d=\"M76 0h38v190H76z\"/></g></svg>","HR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#D80027\" d=\"M0 0h513v114H0z\"/><path fill=\"#0052B4\" d=\"M0 228h513v114H0z\"/><g fill=\"#338AF3\"><path d=\"M309.3 113.2v-44l17.5-14.4 17.7 14.4v44zM203.7 113.2v-44l-17.3-14.4-17.9 14.4v44zM238.9 113.2v-44l17.6-14.4 17.6 14.4v44z\"/></g><g fill=\"#0052B4\"><path d=\"M309.3 113.2h-35.2v-44l17.5-14.4 17.7 14.4zM238.9 113.2h-35.2v-44l17.5-14.4 17.7 14.4z\"/></g><path stroke=\"#D80027\" fill=\"#FFF\" d=\"M168.5 113.2v101.9c0 24.3 14.4 46.2 35.4 59.4 21.3 13.4 42.1 14.7 52.6 14.7s31.4-1.7 52.6-14.8c21-13 35.4-35.1 35.4-59.3V113.2h-176z\"/><g fill=\"#D80027\"><path d=\"M168.5 113.2h35.2v35.2h-35.2zM238.9 113.2h35.2v35.2h-35.2zM309.3 113.2h35.2v35.2h-35.2zM203.7 148.4h35.2v35.2h-35.2zM274.1 148.4h35.2v35.2h-35.2zM168.5 183.6h35.2v35.2h-35.2zM203.7 218.8h35.2V254h-35.2zM238.9 183.6h35.2v35.2h-35.2zM309.3 183.6h35.2v35.2h-35.2zM274.1 218.8h35.2V254h-35.2zM309.3 274.3c8.6-5.4 16.2-12.3 22-20.3h-22v20.3zM181.7 254c5.8 8 13.3 14.9 22 20.4V254h-22zM238.9 254v33.7c7.2 1.2 13.3 1.5 17.6 1.5 4.3 0 10.4-.3 17.6-1.6V254h-35.2z\"/></g></svg>","HU":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#D80027\" d=\"M0 0h513v114H0z\"/><path fill=\"#6DA544\" d=\"M0 228h513v114H0z\"/></svg>","ID":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#E00\" d=\"M0 0h513v171H0z\"/></svg>","IE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#6DA544\" d=\"M0 0h171v342H0z\"/><path fill=\"#FF9811\" d=\"M342 0h171v342H342z\"/></svg>","IL":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"#2E52B2\"><path d=\"M340.6 122.4h-56.1l-28-48.6-28 48.6h-56.1l28 48.6-28 48.6h56.1l28 48.6 28-48.6h56.1l-28-48.6 28-48.6zM293.2 171 276 204.2h-38.9L219.8 171l17.2-33.2h38.9l17.3 33.2zm-36.7-71.8 11.9 23.3h-23.9l12-23.3zm-58.3 38.6h23.9l-10.8 21-13.1-21zm0 66.4 13-22.1 11.9 22.1h-24.9zm58.3 37.5-11.9-22.1h23.9l-12 22.1zm59.4-37.5h-25l11.9-22.1 13.1 22.1zm-26.1-66.4h26.1l-13 22.1-13.1-22.1zM0 21.3h512V64H0zM0 277.3h512V320H0z\"/></g></svg>","IN":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#181A93\" d=\"M17.3 0h478.4v342H17.3V0z\"/><path fill=\"#FFA44A\" d=\"M0 0h513v114H0V0z\"/><path fill=\"#1A9F0B\" d=\"M0 228h513v114H0V228z\"/><path fill=\"#FFF\" d=\"M0 114h513v114H0V114z\"/><circle fill=\"#FFF\" cx=\"256.5\" cy=\"171\" r=\"34.2\"/><path fill=\"#181A93\" d=\"M256.5 216.6c-25.1 0-45.6-20.5-45.6-45.6s20.5-45.6 45.6-45.6 45.6 20.5 45.6 45.6-20.5 45.6-45.6 45.6zm0-11.4c18.2 0 34.2-16 34.2-34.2s-15.9-34.2-34.2-34.2-34.2 16-34.2 34.2 16 34.2 34.2 34.2z\"/><circle fill=\"#181A93\" cx=\"256.5\" cy=\"171\" r=\"22.8\"/></svg>","IQ":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#CE1126\" d=\"M0 0h513v114H0z\"/><path d=\"M0 228h513v114H0z\"/><g fill=\"#547C31\"><path d=\"M219.2 160.7h-29.3c1.5-5.7 6.6-9.9 12.8-9.9v-19.9c-18.3 0-33.1 14.9-33.1 33.1v16.5h49.6c1.8 0 3.3 1.5 3.3 3.3v6.6h-66.2v19.9h86.1v-26.5c0-12.7-10.4-23.1-23.2-23.1zM268.8 190.5v-59.6H249v79.5h33.1v-19.9zM335 190.5v-59.6h-19.8v59.6h-6.6v-19.8h-19.9v39.7h59.6v-19.9z\"/></g></svg>","IR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h512v342H0z\"/><path fill=\"#6DA544\" d=\"M0 0h513v114H0z\"/><g fill=\"#D80027\"><path d=\"M0 227.9h513v114H0zM278.8 134.8c.1 2 8.7 26.2 4.4 39.4-6.6 20.3-15.8 21.8-19.8 24.5V134l-6.9-4.2-6.9 4.2v64.7c-4-2.7-12.4-2.4-19.8-24.5-4.3-12.7 5.7-37.3 5.8-39.2 0 0-9.5 8.1-15.8 24-5.9 14.8 1.9 49.6 29.5 54.8 2.3.4 4.7 5.6 7.2 5.6 2.1 0 4.1-5.2 6-5.5 28.4-4.6 35-41.7 29.9-55.6-5.4-14.6-13.6-23.5-13.6-23.5z\"/></g><g fill=\"#FFF\" opacity=\".5\"><path d=\"M44.6 98.9h22.3v24.4H44.6zM0 98.9h22.3v24.4H0zM89.2 98.9h22.3v24.4H89.2zM133.8 98.9h22.3v24.4h-22.3zM178.4 98.9h22.3v24.4h-22.3zM223 98.9h22.3v24.4H223zM267.7 98.9H290v24.4h-22.3zM312.3 98.9h22.3v24.4h-22.3zM356.9 98.9h22.3v24.4h-22.3zM401.5 98.9h22.3v24.4h-22.3zM446.1 98.9h22.3v24.4h-22.3zM490.7 98.9H513v24.4h-22.3zM44.6 216.9h22.3v25.5H44.6zM0 216.9h22.3v25.5H0zM89.2 216.9h22.3v25.5H89.2zM133.8 216.9h22.3v25.5h-22.3zM178.4 216.9h22.3v25.5h-22.3zM223 216.9h22.3v25.5H223zM267.7 216.9H290v25.5h-22.3zM312.3 216.9h22.3v25.5h-22.3zM356.9 216.9h22.3v25.5h-22.3zM401.5 216.9h22.3v25.5h-22.3zM446.1 216.9h22.3v25.5h-22.3zM490.7 216.9H513v25.5h-22.3z\"/></g></svg>","IS":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#0052B4\" d=\"M0 0h513v342H0z\"/><path fill=\"#FFF\" d=\"M513 210.6H202.2v130.7H122.4V210.6H0V130.8h122.4V0H202.2v130.8H513v18.5l-1 42.7z\"/><path fill=\"#D80027\" d=\"M513 149.3V192H183.7v149.3H141V192H0v-42.7h141V0h42.7v149.3z\"/></svg>","IT":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M342 0H0v341.3h512V0z\"/><path fill=\"#6DA544\" d=\"M0 0h171v342H0z\"/><path fill=\"#D80027\" d=\"M342 0h171v342H342z\"/></svg>","JM":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#6DA544\" d=\"M0 0h513v342H0z\"/><path d=\"M215.9 171 0 314.6V26.8zM513 26.8v287.8L296.1 171z\"/><path fill=\"#0052B4\" d=\"M513 26.8 296.1 171 513 314.6V342h-41.1L256 197.4 40.1 342H0v-27.4L215.9 171 0 26.8V0h40.1L256 143.9 471.9 0H513z\"/><path fill=\"#FFDA44\" d=\"M513 26.8 296.1 171 513 314.6V342h-41.1L256 197.4 40.1 342H0v-27.4L215.9 171 0 26.8V0h40.1L256 143.9 471.9 0H513z\"/></svg>","JP":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><circle fill=\"#D80027\" cx=\"256.5\" cy=\"171\" r=\"96\"/></svg>","KE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path d=\"M0 0h512v90.579H0z\"/><path fill=\"#496E2D\" d=\"M0 251h513v91H0z\"/><path fill=\"#A2001D\" d=\"M0 114h513v114H0z\"/><g fill=\"#FFF\"><path d=\"m323.3 54.5-25.6-11.8L256 137l-41.7-94.3-25.6 11.8 51.8 116.2-51.8 116.2 25.6 11.8 41.7-94.4 41.7 94.4 25.6-11.8-51.8-116.2z\"/><path d=\"M273.4 65.6c-9.9-10.8-17.4-17-17.4-17s-7.5 6.2-17.4 17v210.1c9.9 10.8 17.4 17 17.4 17s7.5-6.2 17.4-17V65.6z\"/></g><g fill=\"#A2001D\"><path d=\"M209 105.9v129.5c10.5 18.5 23.3 33.7 32.9 43.8V62.1c-9.6 10.1-22.4 25.3-32.9 43.8zM303 105.9c-10.5-18.5-23.3-33.7-32.9-43.8v217.2c9.6-10.1 22.4-25.3 32.9-43.8V105.9z\"/></g><path d=\"M303 105.9v129.5c10.6-18.8 18.8-41 18.8-64.8s-8.2-45.9-18.8-64.7zM209 105.9v129.5c-10.6-18.8-18.8-41-18.8-64.8s8.2-45.9 18.8-64.7z\"/></svg>","KR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 900 600\"><path fill=\"#FFF\" d=\"M0 0h900v600H0z\"/><g transform=\"rotate(-56.31)\"><g stroke=\"#000\" stroke-width=\"25\"><path d=\"M-75 228.3H75m-150 37.5H75m-150 37.5H75M-75 778.3H75m-150 37.5H75m-150 37.5H75\"/></g><path stroke=\"#FFF\" stroke-width=\"12.5\" d=\"M0 753.3v125\"/><circle fill=\"#ca163a\" cy=\"540.8\" r=\"150\"/><path fill=\"#0e4896\" d=\"M0 390.8c-41.4 0-75 33.6-75 75s33.6 75 75 75 75 33.6 75 75-33.6 75-75 75c-82.8 0-150-67.2-150-150s67.2-150 150-150z\"/></g><g stroke=\"#000\" stroke-width=\"25\"><path d=\"m231.56 535.73-83.205-124.808M262.76 514.928l-83.205-124.807m114.407 104.006-83.205-124.808M689.187 230.644l-83.205-124.807M720.39 209.843 637.184 85.036m114.407 104.006L668.386 64.234\"/></g><path stroke=\"#FFF\" stroke-width=\"12.5\" d=\"m205.6 462.897 31.202-20.8m389.981-259.989 36.444-24.296m31.202-20.801 31.202-20.801\"/></svg>","KZ":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#36B6CC\" d=\"M0 0h513v342H0V0z\"/><circle fill=\"#FFD400\" cx=\"256.5\" cy=\"170.9\" r=\"68.4\"/><path fill=\"#FFD400\" d=\"m256.5 251.5-27.9 41.7-7.1-49.7-43.2 25.5 15.2-47.8-50 4.2 34.4-36.5-46.9-18 46.8-18-34.4-36.5 50 4.2-15.2-47.8 43.2 25.4 7.1-49.7 27.9 41.7 27.9-41.7 7.1 49.7 43.2-25.4-15.2 47.8 50-4.2-34.3 36.6 46.8 17.9-46.8 18 34.4 36.5-50-4.2 15.2 47.8-43.2-25.4-7.1 49.7c0-.1-27.9-41.8-27.9-41.8zm0-.8c44.1 0 79.9-35.8 79.9-79.9S300.6 91 256.5 91s-79.9 35.8-79.9 79.9 35.8 79.8 79.9 79.8zM22.8 28.3c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6V28.3zm0 45.7c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6V74zm0 45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0 45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0 45.7c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0 45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0 45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H28.5c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm22.8-22.8c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0-45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7V245c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0-45.7c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6V188zm0-45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6v-11.4zm0-45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6V96.8zm0-45.6c0-3.2 2.4-5.7 5.7-5.7h11.3c3.2 0 5.7 2.4 5.7 5.7v11.3c.1 3.1-2.4 5.7-5.6 5.7H51.3c-3.1 0-5.7-2.5-5.7-5.6V51.2z\"/></svg>","MA":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#D80027\" d=\"M0 .3V342h513V.3z\"/><path fill=\"#20661B\" d=\"M359.8 148.9h-73.3l-22.7-69.7-22.7 69.7h-73.3l59.3 43.1-22.7 69.7 59.3-43.1 59.3 43.1-22.5-69.7 59.3-43.1zm-116.1 37.7 7.7-23.6h24.8l7.7 23.6-20.1 14.6-20.1-14.6zm27.9-37.7H256l7.8-24 7.8 24zm24.3 29-4.8-14.9h25.3l-20.5 14.9zM236.6 163l-4.8 14.9-20.5-14.9h25.3zm-5.3 61.8 7.8-24 12.6 9.2-20.4 14.8zm44.5-14.9 12.6-9.2 7.8 24-20.4-14.8z\"/></svg>","MX":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#dc2339\" d=\"M342 0H0v341.3h513V0z\"/><path fill=\"#11865d\" d=\"M0 0h171v342H0z\"/><path fill=\"#FFF\" d=\"M171 0h171v342H171z\"/><path fill=\"#8C9157\" d=\"M195.8 171.2c0 21.6 11.5 41.7 30.3 52.5 5.8 3.4 13.2 1.4 16.6-4.4 3.4-5.8 1.4-13.2-4.4-16.6-11.3-6.5-18.2-18.5-18.2-31.5 0-6.7-5.4-12.1-12.1-12.1-6.7 0-12.2 5.4-12.2 12.1zm93.4 51.1c17.5-11.1 28-30.4 28-51.1 0-6.7-5.4-12.1-12.1-12.1s-12.1 5.4-12.1 12.1c0 12.4-6.3 24-16.8 30.7-5.7 3.5-7.5 10.9-4.1 16.7s10.9 7.5 16.7 4.1c0-.2.2-.3.4-.4z\"/><ellipse fill=\"#C59262\" cx=\"256.5\" cy=\"159.1\" rx=\"24.3\" ry=\"36.4\"/></svg>","MY":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"#c00\"><path d=\"M0 0h513v24.4H0zM0 48.9h513v24.4H0zM0 97.7h513v24.4H0zM0 146.6h513V171H0zM0 195.4h513v24.4H0zM0 244.3h513v24.4H0zM0 293.1h513v24.4H0z\"/></g><path fill=\"#006\" d=\"M0 0h256.5v195.4H0z\"/><path d=\"M153.3 42.1C122.6 30.7 88.5 46.3 77.1 77s4.2 64.8 34.9 76.2c13.3 5 28 5 41.4 0-30.7 24.5-75.4 19.6-100-11.1s-19.6-75.4 11.1-100c26-20.7 62.9-20.7 88.8 0zm26.7 75-20.6 23.3 5.4-30.6-31-1.6 27.3-14.9L143 68l28.6 12 8.4-29.9 8.4 29.9L217 68l-18 25.4 27.3 14.9-31 1.6 5.4 30.6-20.7-23.4z\" fill=\"#fc0\"/></svg>","NG":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.5 513 342\"><path fill=\"#FFF\" d=\"M0 85.5h513v342H0z\"/><g fill=\"#007b23\"><path d=\"M0 85.5h171v342H0zM342 85.5h171v342H342z\"/></g></svg>","NL":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 114h513v114H0z\"/><path fill=\"#cd1f2a\" d=\"M0 0h513v114H0z\"/><path fill=\"#1d4185\" d=\"M0 228h513v114H0z\"/></svg>","NO":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#D80027\" d=\"M0 85.334h512v341.337H0z\"/><path fill=\"#FFF\" d=\"M512 295.883H202.195v130.783H122.435V295.883H0V216.111h122.435V85.329H202.195v130.782H512V277.329z\"/><path fill=\"#2E52B2\" d=\"M512 234.666v42.663H183.652v149.337h-42.674V277.329H0v-42.663h140.978V85.329h42.674v149.337z\"/></svg>","NZ":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#0052B4\" d=\"M0 85.334h512v341.337H0z\"/><g fill=\"#D80027\"><path d=\"m425.301 233.745 3.388 10.428h10.963l-8.87 6.444 3.388 10.427-8.869-6.444-8.871 6.444 3.388-10.427-8.87-6.444h10.963zM386.107 308.817l5.083 15.642h16.445l-13.305 9.667 5.082 15.64-13.305-9.667-13.305 9.667 5.083-15.64-13.305-9.667h16.445zM387.588 185.971l4.236 13.036h13.704l-11.088 8.054 4.235 13.034-11.087-8.056-11.088 8.056 4.235-13.034-11.087-8.054h13.704zM349.876 233.291l5.082 15.641h16.446l-13.306 9.666 5.084 15.641-13.306-9.666-13.305 9.666 5.082-15.641-13.305-9.666h16.445z\"/></g><path fill=\"#FFF\" d=\"M256.003 85.329v30.564l-45.178 25.088h45.178v59.359H196.89l59.113 32.846v22.806h-26.69l-73.484-40.826v40.826h-55.652v-48.573l-87.429 48.573H.003v-30.553l45.168-25.099H.003v-59.359h59.103L.003 108.147V85.329h26.68l73.494 40.838V85.329h55.652v48.573l87.43-48.573z\"/><path fill=\"#D80027\" d=\"M144 85.33h-32v69.334H0v32h112v69.334h32v-69.334h112v-32H144z\"/><path fill=\"#0052B4\" d=\"M155.826 200.344 256 255.998v-15.739l-71.847-39.915z\"/><path fill=\"#FFF\" d=\"M155.826 200.344 256 255.998v-15.739l-71.847-39.915z\"/><g fill=\"#D80027\"><path d=\"M155.826 200.344 256 255.998v-15.739l-71.847-39.915zM71.846 200.344 0 240.259v15.739l100.174-55.654z\"/></g><path fill=\"#0052B4\" d=\"M100.174 140.983 0 85.33v15.738l71.847 39.915z\"/><path fill=\"#FFF\" d=\"M100.174 140.983 0 85.33v15.738l71.847 39.915z\"/><g fill=\"#D80027\"><path d=\"M100.174 140.983 0 85.33v15.738l71.847 39.915zM184.154 140.983 256 101.068V85.33l-100.174 55.653z\"/></g></svg>","PE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFF\" d=\"M0 85.331h512v341.326H0z\"/><g fill=\"#D80027\"><path d=\"M0 85.331h170.663v341.337H0zM341.337 85.331H512v341.337H341.337z\"/></g></svg>","PH":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFF\" d=\"M0 85.337h512v341.326H0z\"/><path fill=\"#0052B4\" d=\"M512 85.337V256H256L0 85.337z\"/><path fill=\"#D80027\" d=\"M512 256v170.663H0L256 256z\"/><g fill=\"#FFDA44\"><path d=\"m161.908 256-27.288-12.835 14.532-26.428-29.632 5.668-3.755-29.933-20.64 22.015-20.639-22.015-3.755 29.933-29.631-5.669 14.531 26.428L28.343 256l27.288 12.835L41.1 295.263l29.633-5.668 3.753 29.933 20.639-22.015 20.64 22.015 3.755-29.933 29.631 5.669-14.532-26.427zM21.789 117.607l9.081 12.696 14.879-4.714-9.268 12.56 9.081 12.694-14.809-4.932-9.268 12.559.117-15.608-14.809-4.934 14.88-4.712zM21.789 353.53l9.081 12.696 14.879-4.714-9.268 12.56 9.081 12.695-14.809-4.933-9.268 12.558.117-15.607-14.809-4.934 14.88-4.712zM210.395 235.569l-9.081 12.695-14.879-4.713 9.268 12.559-9.081 12.696 14.809-4.933 9.268 12.558-.117-15.607 14.809-4.934-14.88-4.713z\"/></g></svg>","PK":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><g fill=\"#FFF\"><path d=\"m393.508 170.516 17.512 18.875 23.363-10.821-12.541 22.487 17.513 18.876-25.263-4.978-12.539 22.488-3.073-25.564-25.263-4.978 23.363-10.82z\"/><path d=\"M0 85.343h512v341.326H0z\"/></g><path fill=\"#01411c\" d=\"M128 85.331h384v341.337H128z\"/><g fill=\"#FFF\"><path d=\"M361.909 298.793c-31.037 22.426-74.378 15.446-96.804-15.592-22.427-31.038-15.446-74.379 15.593-96.804 9.677-6.992 20.55-11.125 31.613-12.563-21.283-3.183-43.777 1.613-62.598 15.211-38.2 27.602-46.792 80.944-19.191 119.145 27.601 38.199 80.944 46.792 119.145 19.189 18.82-13.598 30.436-33.448 34.096-54.655-4.839 10.05-12.176 19.076-21.854 26.069zM360.58 172.889l17.484 18.842 23.322-10.802-12.519 22.447 17.483 18.844-25.219-4.968-12.519 22.45-3.067-25.521-25.22-4.969 23.323-10.802z\"/></g></svg>","PL":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><g fill=\"#FFF\"><path d=\"M0 85.337h512v341.326H0z\"/><path d=\"M0 85.337h512V256H0z\"/></g><path fill=\"#D80027\" d=\"M0 256h512v170.663H0z\"/></svg>","PT":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#D80027\" d=\"M0 85.337h512v341.326H0z\"/><path fill=\"#6DA544\" d=\"M196.641 85.337v341.326H0V85.337z\"/><circle fill=\"#FFDA44\" cx=\"196.641\" cy=\"256\" r=\"64\"/><path fill=\"#D80027\" d=\"M160.638 224v40.001c0 19.882 16.118 36 36 36s36-16.118 36-36V224h-72z\"/><path fill=\"#FFF\" d=\"M196.638 276c-6.617 0-12-5.383-12-12v-16h24.001v16c-.001 6.616-5.385 12-12.001 12z\"/></svg>","RO":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFDA44\" d=\"M0 85.331h512v341.326H0z\"/><path fill=\"#0052B4\" d=\"M0 85.331h170.663v341.337H0z\"/><path fill=\"#D80027\" d=\"M341.337 85.331H512v341.337H341.337z\"/></svg>","RS":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#0052B4\" d=\"M0 85.331h512v341.337H0z\"/><path fill=\"#D80027\" d=\"M0 85.331h512v113.775H0z\"/><path fill=\"#FFF\" d=\"M0 312.882h512v113.775H0z\"/><path fill=\"#D80027\" d=\"M129.468 181.793v85.136c0 48.429 63.267 63.267 63.267 63.267S256 315.356 256 266.929v-85.136H129.468z\"/><g fill=\"#FFDA44\"><path d=\"M155.634 196.634h74.201v-29.681l-14.841 7.42-22.261-22.26-22.259 22.26-14.84-7.42zM241.16 278.782l-48.231-48.231-48.231 48.231 15.741 15.74 32.49-32.49 32.49 32.49z\"/></g><path fill=\"#FFF\" d=\"M241.16 233.734h-22.504a14.74 14.74 0 0 0 2.001-7.418c0-8.196-6.645-14.84-14.84-14.84-5.663 0-10.581 3.172-13.083 7.836-2.502-4.663-7.421-7.836-13.083-7.836-8.195 0-14.84 6.644-14.84 14.84 0 2.706.736 5.235 2.001 7.418h-22.114c0 8.196 7.139 14.84 15.334 14.84h-.494c0 8.196 6.644 14.84 14.84 14.84 0 7.257 5.211 13.286 12.094 14.576l-11.694 26.401a48.075 48.075 0 0 0 18.149 3.544 48.079 48.079 0 0 0 18.149-3.544l-11.694-26.401c6.883-1.29 12.094-7.319 12.094-14.576 8.196 0 14.84-6.644 14.84-14.84h-.494c8.199 0 15.338-6.644 15.338-14.84z\"/></svg>","RU":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFF\" d=\"M0 85.33v341.332h512V85.33z\"/><path fill=\"#0052B4\" d=\"M0 85.333h512V426.67H0z\"/><path fill=\"#FFF\" d=\"M0 85.333h512v113.775H0z\"/><path fill=\"#D80027\" d=\"M0 312.884h512v113.775H0z\"/></svg>","SA":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#055e1c\" d=\"M0 85.333h512v341.333H0z\"/><g fill=\"#FFF\"><path d=\"M183.548 289.386c0 12.295 9.731 22.261 21.736 22.261h65.208c0 10.244 8.11 18.551 18.114 18.551h21.736c10.004 0 18.114-8.306 18.114-18.551v-22.261H183.548zM330.264 181.791v51.942c0 8.183-6.5 14.84-14.491 14.84v22.261c19.976 0 36.226-16.643 36.226-37.101v-51.942h-21.735zM174.491 233.734c0 8.183-6.5 14.84-14.491 14.84v22.261c19.976 0 36.226-16.643 36.226-37.101v-51.942H174.49v51.942z\"/><path d=\"M297.661 181.788h21.736v51.942h-21.736zM265.057 211.473c0 2.046-1.625 3.71-3.623 3.71-1.998 0-3.623-1.664-3.623-3.71v-29.682h-21.736v29.682c0 2.046-1.625 3.71-3.623 3.71s-3.623-1.664-3.623-3.71v-29.682h-21.736v29.682c0 14.32 11.376 25.971 25.358 25.971 5.385 0 10.38-1.733 14.491-4.677 4.11 2.944 9.106 4.677 14.491 4.677 1.084 0 2.15-.078 3.2-.215-1.54 6.499-7.255 11.345-14.068 11.345v22.261c19.976 0 36.226-16.643 36.226-37.101v-51.943h-21.736l.002 29.682z\"/><path d=\"M207.093 248.57h32.601v22.261h-32.601z\"/></g></svg>","SE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#0052B4\" d=\"M0 85.333h512V426.67H0z\"/><path fill=\"#FFDA44\" d=\"M192 85.33h-64v138.666H0v64h128v138.666h64V287.996h320v-64H192z\"/></svg>","SG":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFF\" d=\"M0 85.337h512v341.326H0z\"/><path fill=\"#D80027\" d=\"M0 85.337h512V256H0z\"/><g fill=\"#FFF\"><path d=\"M83.478 170.666c0-24.865 17.476-45.637 40.812-50.734a52.059 52.059 0 0 0-11.13-1.208c-28.688 0-51.942 23.254-51.942 51.941s23.255 51.942 51.942 51.942c3.822 0 7.543-.425 11.13-1.208-23.336-5.095-40.812-25.867-40.812-50.733zM150.261 122.435l3.684 11.337h11.921l-9.645 7.007 3.684 11.337-9.644-7.006-9.645 7.006 3.685-11.337-9.645-7.007h11.921z\"/><path d=\"m121.344 144.696 3.683 11.337h11.921l-9.645 7.007 3.684 11.337-9.643-7.006-9.645 7.006 3.685-11.337-9.645-7.007h11.921zM179.178 144.696l3.684 11.337h11.921l-9.645 7.007 3.684 11.337-9.644-7.006-9.644 7.006 3.685-11.337-9.645-7.007h11.921zM168.047 178.087l3.684 11.337h11.921l-9.644 7.007 3.684 11.337-9.645-7.006-9.643 7.006 3.684-11.337-9.644-7.007h11.92zM132.474 178.087l3.683 11.337h11.921l-9.644 7.007 3.684 11.337-9.644-7.006-9.644 7.006 3.684-11.337-9.644-7.007h11.92z\"/></g></svg>","TH":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><path fill=\"#A51931\" d=\"M0 0h513v57H0zM0 285h513v57H0z\"/><path fill=\"#2D2A4A\" d=\"M0 114h513v114H0z\"/></svg>","TR":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#E30A17\" d=\"M0 0h513v342H0z\"/><path fill=\"#FFF\" d=\"M259.7 118.6c-13.1-9.5-29-14.6-45.3-14.5-40.8 0-73.8 30.8-73.8 68.9s33.1 68.9 73.8 68.9c17.1 0 32.9-5.4 45.3-14.5-30 38.6-85.7 45.6-124.3 15.5s-45.6-85.7-15.5-124.3 85.7-45.6 124.3-15.5c5.8 4.5 11 9.8 15.5 15.5zm39.9 65.8-18.1 21.9 1.2-28.4-26.4-10.4 27.3-7.6 1.8-28.3 15.6 23.7 27.5-7.1-17.5 22 15.3 23.9-26.7-9.7z\"/></svg>","UA":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFDA44\" d=\"M0 85.337h512v341.326H0z\"/><path fill=\"#338AF3\" d=\"M0 85.337h512V256H0z\"/></svg>","US":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 513 342\"><path fill=\"#FFF\" d=\"M0 0h513v342H0z\"/><g fill=\"#D80027\"><path d=\"M0 0h513v26.3H0zM0 52.6h513v26.3H0zM0 105.2h513v26.3H0zM0 157.8h513v26.3H0zM0 210.5h513v26.3H0zM0 263.1h513v26.3H0zM0 315.7h513V342H0z\"/></g><path fill=\"#2E52B2\" d=\"M0 0h256.5v184.1H0z\"/><g fill=\"#FFF\"><path d=\"m47.8 138.9-4-12.8-4.4 12.8H26.2l10.7 7.7-4 12.8 10.9-7.9 10.6 7.9-4.1-12.8 10.9-7.7zM104.1 138.9l-4.1-12.8-4.2 12.8H82.6l10.7 7.7-4 12.8 10.7-7.9 10.8 7.9-4-12.8 10.7-7.7zM160.6 138.9l-4.3-12.8-4 12.8h-13.5l11 7.7-4.2 12.8 10.7-7.9 11 7.9-4.2-12.8 10.7-7.7zM216.8 138.9l-4-12.8-4.2 12.8h-13.3l10.8 7.7-4 12.8 10.7-7.9 10.8 7.9-4.3-12.8 11-7.7zM100 75.3l-4.2 12.8H82.6L93.3 96l-4 12.6 10.7-7.8 10.8 7.8-4-12.6 10.7-7.9h-13.4zM43.8 75.3l-4.4 12.8H26.2L36.9 96l-4 12.6 10.9-7.8 10.6 7.8L50.3 96l10.9-7.9H47.8zM156.3 75.3l-4 12.8h-13.5l11 7.9-4.2 12.6 10.7-7.8 11 7.8-4.2-12.6 10.7-7.9h-13.2zM212.8 75.3l-4.2 12.8h-13.3l10.8 7.9-4 12.6 10.7-7.8 10.8 7.8-4.3-12.6 11-7.9h-13.5zM43.8 24.7l-4.4 12.6H26.2l10.7 7.9-4 12.7L43.8 50l10.6 7.9-4.1-12.7 10.9-7.9H47.8zM100 24.7l-4.2 12.6H82.6l10.7 7.9-4 12.7L100 50l10.8 7.9-4-12.7 10.7-7.9h-13.4zM156.3 24.7l-4 12.6h-13.5l11 7.9-4.2 12.7 10.7-7.9 11 7.9-4.2-12.7 10.7-7.9h-13.2zM212.8 24.7l-4.2 12.6h-13.3l10.8 7.9-4 12.7 10.7-7.9 10.8 7.9-4.3-12.7 11-7.9h-13.5z\"/></g></svg>","VE":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 22.5 15\"><path fill=\"#FFCE00\" d=\"M0 0h22.5v5H0z\"/><path fill=\"#203899\" d=\"M0 5h22.5v5H0z\"/><path fill=\"#D82B2B\" d=\"M0 10h22.5v5H0z\"/><path fill=\"#FFF\" d=\"m12.13 5.38.14.46.45.14-.39.27.01.48-.38-.29-.45.15.15-.44-.28-.38h.47zM10.36 5.38l.27.39h.47l-.28.38.15.45-.45-.16-.38.28.01-.47-.39-.28.45-.13zM13.8 5.94l-.01.48.39.27-.46.14-.14.45-.27-.38h-.48l.29-.38-.15-.45.45.16zM8.69 5.96l.4.27.44-.18-.13.46.3.36-.47.02-.26.4-.16-.44-.46-.12.37-.3zM15.24 7.13l-.2.44.25.4-.47-.05-.31.36-.1-.46-.43-.18.41-.24.03-.47.35.31zM15.43 8.25l.21.43.47.07-.34.33.08.46-.42-.22-.42.22.08-.46-.34-.33.47-.07zM7 8.2l.21.43.47.06-.34.33.08.47L7 9.27l-.42.22.08-.47-.34-.33.47-.06zM7.31 7.05l.45.14.38-.29v.48l.39.26-.45.15-.13.46-.28-.38-.47.01.27-.38z\"/></svg>","VN":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#D80027\" d=\"M196.641 85.337H0v341.326h512V85.337z\"/><path fill=\"#FFDA44\" d=\"m256 157.279 22.663 69.747H352l-59.332 43.106 22.664 69.749L256 296.774l-59.332 43.107 22.664-69.749L160 227.026h73.337z\"/></svg>","ZA":"<svg width=\"900\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 85.333 512 341.333\"><path fill=\"#FFF\" d=\"M0 85.337h512v341.326H0z\"/><path d=\"M114.024 256.001 0 141.926v228.17z\"/><path fill=\"#ffb915\" d=\"M161.192 256 0 94.7v47.226l114.024 114.075L0 370.096v47.138z\"/><path fill=\"#007847\" d=\"M509.833 289.391c.058-.44.804-.878 2.167-1.318v-65.464H222.602L85.33 85.337H0V94.7L161.192 256 0 417.234v9.429h85.33l137.272-137.272h287.231z\"/><path fill=\"#000c8a\" d=\"M503.181 322.783H236.433l-103.881 103.88H512v-103.88z\"/><path fill=\"#e1392d\" d=\"M503.181 189.217H512V85.337H132.552l103.881 103.88z\"/></svg>"};
+const FLAG_IMG={};
+function loadFlags(){return Promise.all(Object.entries(FLAG_SVG).map(([k,s])=>new Promise(res=>{const im=new Image();im.onload=()=>{FLAG_IMG[k]=im;res()};im.onerror=()=>res();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)})))}
+function drawFlag(ctx,code,x,y,w,h){const im=FLAG_IMG[code];if(im)ctx.drawImage(im,x,y,w,h);else{ctx.fillStyle='#3a4a6a';ctx.fillRect(x,y,w,h)}}
+function paintFlagCanvas(cv,code){const c=cv.getContext('2d');c.clearRect(0,0,cv.width,cv.height);drawFlag(c,code,0,0,cv.width,cv.height)}
+function flagEl(code,w=48,h=32){const cv=document.createElement('canvas');cv.width=w*2;cv.height=h*2;paintFlagCanvas(cv,code);return cv}
+
+/* marble sprite: flag wrapped on a sphere, cached per country */
+const SPRITES={};
+function marbleSprite(code,size=128){
+  const key=code+size; if(SPRITES[key])return SPRITES[key];
+  const cv=document.createElement('canvas');cv.width=cv.height=size;const c=cv.getContext('2d');
+  const r=size/2;
+  c.save();c.beginPath();c.arc(r,r,r-1,0,7);c.clip();
+  const fw=size*1.5;drawFlag(c,code,r-fw/2,0,fw,size);
+  // glass shading
+  let g=c.createRadialGradient(r*.65,r*.6,r*.1,r,r,r);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.75,'rgba(0,0,0,.12)');g.addColorStop(1,'rgba(0,0,0,.55)');c.fillStyle=g;c.fillRect(0,0,size,size);
+  c.restore();
+  c.beginPath();c.arc(r,r,r-1.5,0,7);c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=2;c.stroke();
+  SPRITES[key]=cv;return cv;
+}
+
+/* ================= AUDIO ================= */
+const Audio_ = (()=>{
+  let ctx=null,master,musicGain,sfxGain,comp,delay,delayGain,enabled=true,running=false,timer=null;
+  const BPM=122,STEP=60/BPM/4;let nextTime=0,step=0;
+  const CH=[ // [bass root midi, pad chord midis, arp notes]
+    [45,[57,60,64,67],[69,72,76,79]],[41,[53,57,60,64],[65,69,72,76]],[48,[60,64,67,71],[72,76,79,83]],[43,[55,59,62,69],[67,71,74,81]]];
+  const f=m=>440*Math.pow(2,(m-69)/12);
+  function init(){
+    if(ctx)return; ctx=new (window.AudioContext||window.webkitAudioContext)();
+    comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.attack.value=.01;comp.release.value=.2;
+    master=ctx.createGain();master.gain.value=enabled?1:0;comp.connect(master);master.connect(ctx.destination);
+    musicGain=ctx.createGain();musicGain.gain.value=.55;musicGain.connect(comp);
+    sfxGain=ctx.createGain();sfxGain.gain.value=.8;sfxGain.connect(comp);
+    delay=ctx.createDelay(1);delay.delayTime.value=STEP*3;delayGain=ctx.createGain();delayGain.gain.value=.38;
+    const dfilt=ctx.createBiquadFilter();dfilt.type='lowpass';dfilt.frequency.value=2200;
+    delay.connect(dfilt);dfilt.connect(delayGain);delayGain.connect(delay);delayGain.connect(musicGain);
+  }
+  function noise(len){const b=ctx.createBuffer(1,ctx.sampleRate*len,ctx.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
+  let noiseBuf;
+  function env(g,t,a,peak,d,sus=0){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(Math.max(sus,.0005),t+a+d)}
+  function kick(t){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(42,t+.13);env(g,t,.003,.9,.32);o.connect(g);g.connect(musicGain);o.start(t);o.stop(t+.4)}
+  function hat(t,v){const s=ctx.createBufferSource();s.buffer=noiseBuf;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=7500;const g=ctx.createGain();env(g,t,.001,v,.045);s.connect(hp);hp.connect(g);g.connect(musicGain);s.start(t);s.stop(t+.08)}
+  function clap(t){const s=ctx.createBufferSource();s.buffer=noiseBuf;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1400;bp.Q.value=.9;const g=ctx.createGain();env(g,t,.002,.22,.16);s.connect(bp);bp.connect(g);g.connect(musicGain);g.connect(delay);s.start(t);s.stop(t+.25)}
+  function bass(t,midi,len){const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=f(midi);const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.Q.value=6;lp.frequency.setValueAtTime(420,t);lp.frequency.exponentialRampToValueAtTime(140,t+len);const g=ctx.createGain();env(g,t,.005,.28,len);o.connect(lp);lp.connect(g);g.connect(musicGain);o.start(t);o.stop(t+len+.05)}
+  function pad(t,chord,len){const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(500,t);lp.frequency.linearRampToValueAtTime(1300,t+len*.6);lp.frequency.linearRampToValueAtTime(500,t+len);const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+len*.35);g.gain.linearRampToValueAtTime(0,t+len);lp.connect(g);g.connect(musicGain);g.connect(delay);
+    chord.forEach((m,i)=>{[-6,6].forEach(det=>{const o=ctx.createOscillator();o.type=i%2?'sawtooth':'triangle';o.frequency.value=f(m);o.detune.value=det;o.connect(lp);o.start(t);o.stop(t+len)})})}
+  function pluck(t,midi){const o=ctx.createOscillator();o.type='triangle';o.frequency.value=f(midi);const g=ctx.createGain();env(g,t,.004,.11,.28);o.connect(g);g.connect(musicGain);g.connect(delay);o.start(t);o.stop(t+.35)}
+  const BASSPAT=[1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0],ARPPAT=[0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1];
+  function schedule(){
+    while(nextTime<ctx.currentTime+.12){
+      const bar=Math.floor(step/16),s16=step%16,ch=CH[bar%4];
+      if(s16%4===0)kick(nextTime);
+      if(s16===4||s16===12)clap(nextTime);
+      hat(nextTime,s16%4===2?.13:(s16%2?.05:.03));
+      if(BASSPAT[s16])bass(nextTime,ch[0]+(s16===8||s16===13?12:0),STEP*(s16===0?1.6:.9));
+      if(s16===0)pad(nextTime,ch[1],STEP*16+.1);
+      if(ARPPAT[s16]&&(bar%2||s16>6))pluck(nextTime+.001,ch[2][(step*7+bar)%4]);
+      nextTime+=STEP;step++;
+    }
+  }
+  function startMusic(){init();if(running)return;noiseBuf=noiseBuf||noise(1);if(ctx.state==='suspended')ctx.resume();running=true;nextTime=ctx.currentTime+.05;step=0;timer=setInterval(schedule,30)}
+  function stopMusic(){if(timer)clearInterval(timer);timer=null;running=false}
+  function setEnabled(v){enabled=v;if(master)master.gain.setTargetAtTime(v?1:0,ctx.currentTime,.05)}
+  // SFX
+  let lastBump=0;
+  function bump(intensity){if(!ctx||!enabled)return;const now=ctx.currentTime;if(now-lastBump<.03)return;lastBump=now;
+    const v=Math.min(.5,intensity);const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(900+Math.random()*600,now);o.frequency.exponentialRampToValueAtTime(300,now+.05);const g=ctx.createGain();env(g,now,.001,v*.5,.06);o.connect(g);g.connect(sfxGain);o.start(now);o.stop(now+.08);
+    const s=ctx.createBufferSource();s.buffer=noiseBuf;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=3000;const g2=ctx.createGain();env(g2,now,.001,v*.35,.03);s.connect(bp);bp.connect(g2);g2.connect(sfxGain);s.start(now);s.stop(now+.05)}
+  function tone(freq,t,dur,type='sine',vol=.25,dest){const o=ctx.createOscillator();o.type=type;o.frequency.value=freq;const g=ctx.createGain();env(g,t,.01,vol,dur);o.connect(g);g.connect(dest||sfxGain);o.start(t);o.stop(t+dur+.05)}
+  function beep(final){if(!ctx)return;tone(final?880:440,ctx.currentTime,final?.5:.15,'square',.12)}
+  function gate(){if(!ctx)return;const now=ctx.currentTime;const s=ctx.createBufferSource();s.buffer=noiseBuf;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(300,now);bp.frequency.exponentialRampToValueAtTime(4000,now+.4);bp.Q.value=2;const g=ctx.createGain();env(g,now,.02,.3,.45);s.connect(bp);bp.connect(g);g.connect(sfxGain);s.start(now);s.stop(now+.5)}
+  function finish(place){if(!ctx)return;const now=ctx.currentTime;const base=place<=4?660:392;tone(base,now,.18,'triangle',.22);tone(base*1.5,now+.1,.3,'triangle',.22,delay)}
+  function eliminated(){if(!ctx)return;const now=ctx.currentTime;tone(330,now,.25,'sawtooth',.1);tone(262,now+.18,.4,'sawtooth',.1)}
+  function crush(type){if(!ctx)return;const now=ctx.currentTime;
+    if(type==='saw'){const s=ctx.createBufferSource();s.buffer=noiseBuf;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(2500,now);bp.frequency.exponentialRampToValueAtTime(600,now+.35);bp.Q.value=3;const g=ctx.createGain();env(g,now,.005,.4,.4);s.connect(bp);bp.connect(g);g.connect(sfxGain);s.start(now);s.stop(now+.45)}
+    else{const o=ctx.createOscillator();o.frequency.setValueAtTime(90,now);o.frequency.exponentialRampToValueAtTime(30,now+.3);const g=ctx.createGain();env(g,now,.005,.6,.35);o.connect(g);g.connect(sfxGain);o.start(now);o.stop(now+.4);
+      const s=ctx.createBufferSource();s.buffer=noiseBuf;const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1200;const g2=ctx.createGain();env(g2,now,.002,.35,.25);s.connect(lp);lp.connect(g2);g2.connect(sfxGain);s.start(now);s.stop(now+.3)}
+    tone(f(60),now+.05,.5,'triangle',.12)}
+  function fanfare(){if(!ctx)return;const now=ctx.currentTime;[0,4,7,12,16,19,24].forEach((n,i)=>{tone(f(69+n),now+i*.09,.5,'triangle',.2,delay)});tone(f(93),now+.7,1.4,'triangle',.25,delay)}
+  return {startMusic,stopMusic,setEnabled,bump,beep,gate,finish,eliminated,fanfare,crush,init};
+})();
+
+/* ================= PHYSICS + TRACK =================
+   Real units. A standard 16 mm glass marble is drawn 34 px across, so 1 m = 2125 px.
+   Gravity is a true 9.81 m/s²; restitution and friction use measured glass-marble values. */
+const TW=800;                   // course width (38 cm)
+const MR=17;                    // marble radius (8 mm)
+const PX_PER_M=(MR*2)/0.016;    // 2125 px per metre
+const G=9.81*PX_PER_M;          // 20 850 px/s²
+const FINISH_Y=8620, TRACK_H=9000;   // 4.05 m course
+const DT=1/1200;                // physics step (0.83 ms)
+const E_RAIL=.42,E_PIN=.55,E_BUMPER=.72,E_MARBLE=.78,E_WALL=.42; // coefficients of restitution
+const MU=.35;                   // impact (sliding) friction, glass on hard plastic
+const ROLL_RES=.012;            // rolling resistance coefficient
+const ROLL=5/7;                 // solid sphere: only 5/7 of the slope acceleration goes into translation
+
+function buildTrack(){
+  const segs=[],pegs=[],spinners=[];
+  const seg=(x1,y1,x2,y2,o={})=>segs.push(Object.assign({x1,y1,x2,y2,rad:6,rest:E_RAIL,kind:'wall'},o));
+  const peg=(x,y,r=10,o={})=>pegs.push(Object.assign({x,y,r,rest:E_PIN,kind:'peg'},o));
+  const spin=(cx,cy,len,av,arms=2,o={})=>spinners.push(Object.assign({cx,cy,len,av,arms,ang:Math.random()*6,rad:7,rest:E_RAIL,kind:'spinner'},o));
+  // start shelf + funnel
+  seg(70,230,730,230,{kind:'gate',rad:5});
+  seg(0,240,150,330);seg(TW,240,650,330);
+  // pin field (real plinko): 8 rows of steel pins
+  for(let row=0;row<8;row++){const y=430+row*70;const off=row%2?45:0;for(let x=80+off;x<TW-40;x+=90)peg(x,y,9)}
+  // long zigzag of rolling rails, ~12° slope (marbles roll, not fall)
+  let y=1180;
+  for(let i=0;i<6;i++){const drop=136;if(i%2===0)seg(0,y,640,y+drop);else seg(TW,y,160,y+drop);y+=310}
+  // spinners (13 rpm)
+  spin(210,3120,105,1.4);spin(590,3120,105,-1.4);spin(400,3380,120,1.1,3);
+  seg(0,3190,60,3200);seg(TW,3190,740,3200);
+  // funnel
+  seg(0,3560,330,3860);seg(TW,3560,470,3860);seg(330,3860,330,3920);seg(470,3860,470,3920);
+  // bumper garden: big rubber-capped posts
+  const bumps=[[150,4060],[400,4080],[650,4060],[280,4220],[520,4220],[120,4370],[400,4380],[680,4370],[280,4530],[520,4530]];
+  bumps.forEach(([x,y])=>peg(x,y,20,{rest:E_BUMPER,kind:'bumper'}));
+  // second zigzag, steeper (~16°)
+  y=4700;
+  for(let i=0;i<4;i++){const drop=180;if(i%2===0)seg(0,y,640,y+drop);else seg(TW,y,160,y+drop);y+=330}
+  // the comb: staggered sloped ledges
+  seg(0,6120,300,6160);seg(TW,6220,500,6260);seg(0,6320,300,6360);seg(TW,6420,500,6460);
+  seg(380,6160,420,6165,{rad:5});seg(380,6360,420,6365,{rad:5});
+  // windmill + gates
+  spin(400,6720,140,-1.3,3,{rad:8});
+  seg(0,6610,110,6650);seg(TW,6610,690,6650);
+  // final converge
+  seg(0,6980,300,7190);seg(TW,6980,500,7190);
+  peg(400,7100,12);
+  // home straight: two shallow rails to the line
+  seg(0,7400,560,7560);seg(TW,7760,240,7920);
+  seg(0,8420,180,8460);seg(TW,8420,620,8460);
+  // floor
+  seg(0,TRACK_H-40,TW,TRACK_H-40,{rad:10,rest:.15});
+  // hazards: anything caught here is out of the heat
+  const hazards=[
+    // hydraulic crusher over rail 4 of the first zigzag (rail y at x≈425 is 2190)
+    {type:'crusher',x1:372,x2:478,railY:2190,period:9,down:.14,phase:Math.random()*9,drop:120,name:'crushed'},
+    // saw blade hanging over rail 2 of the second zigzag (rail y at x≈480 is 5120; rolling marbles just clear it)
+    {type:'saw',cx:480,cy:4982,r:30,av:9,name:'shredded'},
+    // trapdoor in the home-straight rail: opens briefly, marbles drop into the void
+    {type:'trapdoor',x1:290,x2:390,railY:7486,period:5,open:.8,phase:Math.random()*5,name:'lost in the pit'}
+  ];
+  return {segs,pegs,spinners,hazards};
+}
+
+class Race{
+  constructor(countries,grace=6){this.grace=grace;
+    this.track=buildTrack();
+    this.marbles=countries.map((c,i)=>({c,x:150+(i%4)*165+(Math.random()-.5)*20,y:190-Math.floor(i/4)*40,vx:0,vy:0,ang:0,av:0,r:MR,done:false,time:null,stillFor:0,best:0,bestT:0,cn:null,dead:false,deadHow:null,deadT:0,shards:null}));
+    this.time=0;this.started=false;this.gateOpen=false;this.finished=[];this.over=false;this.afterFourth=null;
+    this.onFinish=null;this.onBump=null;this.onDestroy=null;this.acc=0;
+  }
+  open(){this.gateOpen=true;this.started=true;this.track.segs=this.track.segs.filter(s=>s.kind!=='gate')}
+  step(simSeconds){this.acc+=simSeconds;while(this.acc>=DT){this.substep(DT);this.acc-=DT}}
+  substep(dt){
+    const T=this.track;
+    if(this.started)this.time+=dt;
+    for(const sp of T.spinners)sp.ang+=sp.av*dt;
+    const ms=this.marbles;
+    for(const m of ms){
+      if(m.dead)continue;
+      if(m.done&&m.y>TRACK_H-120){m.vx*=.98;m.vy*=.98;continue}
+      if(m.cn){ // resting on a surface: normal component of gravity is carried by the surface,
+                // the tangential part accelerates a rolling sphere at 5/7 g·sinθ, minus rolling resistance
+        const n=m.cn,gn=G*n.y;const tgx=-gn*n.x,tgy=G-gn*n.y;
+        m.vx+=(gn*n.x+tgx*ROLL)*dt;m.vy+=(gn*n.y+tgy*ROLL)*dt; // normal part is cancelled by the surface, tangential part rolls
+        const tx=-n.y,ty=n.x;const vt=m.vx*tx+m.vy*ty;const rr=Math.min(Math.abs(vt),ROLL_RES*G*dt)*Math.sign(vt);m.vx-=rr*tx;m.vy-=rr*ty;
+        m.av=vt/m.r;
+      }else{m.vy+=G*dt}
+      m.x+=m.vx*dt;m.y+=m.vy*dt;m.ang+=m.av*dt;m.cn=null;
+    }
+    for(const m of ms){
+      if(m.dead)continue;
+      if(m.x<m.r){m.x=m.r;if(m.vx<0)m.vx=-m.vx*E_WALL}else if(m.x>TW-m.r){m.x=TW-m.r;if(m.vx>0)m.vx=-m.vx*E_WALL}
+      if(m.y<m.r){m.y=m.r;m.vy=Math.abs(m.vy)*E_WALL}
+    }
+    for(const m of ms){
+      if(m.dead)continue;
+      for(const s of T.segs)this.collideSeg(m,s.x1,s.y1,s.x2,s.y2,s.rad,s.rest,0,0,0,0);
+      for(const sp of T.spinners){
+        for(let a=0;a<sp.arms;a++){const ang=sp.ang+a*Math.PI/sp.arms;const dx=Math.cos(ang)*sp.len,dy=Math.sin(ang)*sp.len;
+          this.collideSeg(m,sp.cx-dx,sp.cy-dy,sp.cx+dx,sp.cy+dy,sp.rad,sp.rest,sp.cx,sp.cy,sp.av,1)}
+      }
+      for(const p of T.pegs){
+        const dx=m.x-p.x,dy=m.y-p.y,d=Math.hypot(dx,dy),min=m.r+p.r;
+        if(d<min&&d>0){const nx=dx/d,ny=dy/d;m.x+=nx*(min-d);m.y+=ny*(min-d);this.resolve(m,nx,ny,0,0,p.rest,p.kind==='bumper')}
+      }
+    }
+    for(let i=0;i<ms.length;i++)for(let j=i+1;j<ms.length;j++){
+      const a=ms[i],b=ms[j];if(a.dead||b.dead)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),min=a.r+b.r;
+      if(d<min&&d>0){const nx=dx/d,ny=dy/d,pen=(min-d)/2;a.x-=nx*pen;a.y-=ny*pen;b.x+=nx*pen;b.y+=ny*pen;
+        const rvx=b.vx-a.vx,rvy=b.vy-a.vy,vn=rvx*nx+rvy*ny;
+        if(vn<0){const jv=-(1+E_MARBLE)*vn/2;a.vx-=jv*nx;a.vy-=jv*ny;b.vx+=jv*nx;b.vy+=jv*ny;this.hit(-vn*.7,false)}}
+    }
+    // hazards
+    for(const h of T.hazards){
+      if(h.type==='crusher'){const ph=(this.time+h.phase)%h.period;h.active=ph<h.down;h.t=ph;
+        if(h.active)for(const m of ms)if(!m.dead&&!m.done&&m.x>h.x1-m.r*.5&&m.x<h.x2+m.r*.5&&m.y>h.railY-h.drop&&m.y<h.railY+10)this.destroy(m,h)}
+      else if(h.type==='saw'){h.ang=(h.ang||0)+h.av*dt;for(const m of ms)if(!m.dead&&!m.done&&Math.hypot(m.x-h.cx,m.y-h.cy)<m.r+h.r-6)this.destroy(m,h)}
+      else if(h.type==='trapdoor'){const ph=(this.time+h.phase)%h.period;h.active=ph<h.open;
+        if(h.active)for(const m of ms)if(!m.dead&&!m.done&&m.x>h.x1+4&&m.x<h.x2-4&&Math.abs(m.y-(h.railY-m.r-6))<30){m.trap=true}}
+    }
+    for(const m of ms){
+      if(m.trap&&!m.dead){m.trap=false;const h=T.hazards.find(x=>x.type==='trapdoor');this.destroy(m,h)}
+      if(m.dead){m.deadT+=dt;if(m.shards)for(const sh of m.shards){sh.vy+=G*.35*dt;sh.x+=sh.vx*dt;sh.y+=sh.vy*dt;sh.a+=sh.av*dt}continue}
+      if(!m.done&&m.y>FINISH_Y){m.done=true;m.time=this.time;this.finished.push(m);if(this.onFinish)this.onFinish(m,this.finished.length);if(this.finished.length===4)this.afterFourth=this.time}
+      if(!m.done&&this.started){const sp=Math.hypot(m.vx,m.vy);if(sp<40)m.stillFor+=dt;else m.stillFor=0;if(m.stillFor>2.5){m.vx+=(Math.random()-.5)*900;m.vy-=500;m.stillFor=0}}
+      if(m.y>m.best+1){m.best=m.y;m.bestT=this.time}else if(!m.done&&this.started&&this.time-m.bestT>5){m.vx+=(Math.random()<.5?-1:1)*(700+Math.random()*500);m.vy=-700;m.bestT=this.time}
+    }
+    if(this.started&&!this.over){
+      const all=ms.every(m=>m.done||m.dead);
+      if(all||(this.afterFourth!==null&&this.time-this.afterFourth>this.grace)||this.time>45)this.over=true;
+    }
+  }
+  destroy(m,h){m.dead=true;m.deadHow=h.name;m.deadT=0;m.cn=null;
+    m.shards=Array.from({length:14},()=>({x:m.x,y:m.y,vx:(Math.random()-.5)*(h.type==='trapdoor'?500:2400),vy:h.type==='trapdoor'?Math.random()*900+300:-Math.random()*2200-200,a:Math.random()*6,av:(Math.random()-.5)*30,s:4+Math.random()*7,u:Math.random(),v:Math.random()}));
+    if(this.onDestroy)this.onDestroy(m,h)}
+  // impulse with restitution + Coulomb impact friction; slow contacts register as resting (rolling) contacts
+  resolve(m,nx,ny,svx,svy,rest,bumper){
+    const rvx=m.vx-svx,rvy=m.vy-svy;const vn=rvx*nx+rvy*ny;
+    if(vn>=0)return;
+    const tx=-ny,ty=nx;const vt=rvx*tx+rvy*ty;
+    const e=(-vn<0.25*PX_PER_M)?0:rest;               // below ~0.25 m/s a marble stops bouncing and rests
+    const jn=(1+e)*(-vn);
+    m.vx+=jn*nx;m.vy+=jn*ny;
+    const jt=e>0?Math.min(Math.abs(vt),MU*jn)*Math.sign(vt):0;m.vx-=jt*tx;m.vy-=jt*ty; // sliding friction only on real impacts
+    m.av=(vt-jt)/m.r;
+    if(e===0)m.cn={x:nx,y:ny};
+    if(-vn>0.3*PX_PER_M)this.hit(-vn,bumper);
+  }
+  collideSeg(m,x1,y1,x2,y2,rad,rest,cx,cy,av,kin){
+    const ex=x2-x1,ey=y2-y1,L2=ex*ex+ey*ey;let t=((m.x-x1)*ex+(m.y-y1)*ey)/L2;t=t<0?0:t>1?1:t;
+    const px=x1+ex*t,py=y1+ey*t;const dx=m.x-px,dy=m.y-py,d=Math.hypot(dx,dy),min=m.r+rad;
+    if(d>=min||d===0)return;
+    const nx=dx/d,ny=dy/d;m.x+=nx*(min-d);m.y+=ny*(min-d);
+    let svx=0,svy=0;if(kin){svx=-av*(py-cy);svy=av*(px-cx)}
+    this.resolve(m,nx,ny,svx,svy,rest,false);
+  }
+  hit(v,bumper){if(this.onBump)this.onBump(Math.min(1,v/(4*PX_PER_M))*(bumper?1.3:1))}
+  classify(){
+    const ms=this.marbles.slice();
+    ms.sort((a,b)=>{if(a.dead!==b.dead)return a.dead?1:-1;if(a.done&&b.done)return a.time-b.time;if(a.done!==b.done)return a.done?-1:1;return b.best-a.best});
+    const res=ms.map(m=>({m,c:m.c,time:m.time,done:m.done,dead:m.dead,note:null,tie:null}));
+    const tied=(a,b)=>a.dead===b.dead&&((a.done&&b.done&&Math.abs(a.time-b.time)<.1)||(!a.done&&!b.done&&Math.abs(a.m.best-b.m.best)<8));
+    let i=0;const ties=[];
+    while(i<res.length){let j=i;while(j+1<res.length&&tied(res[j],res[j+1]))j++;
+      if(j>i){const grp=res.slice(i,j+1);const decisions=[];
+        grp.sort((a,b)=>{for(const tb of TIEBREAKERS){const d=(b.c[tb.key]-a.c[tb.key])*tb.dir;if(d!==0){decisions.push({a,b,tb,winner:d>0?b:a});return d}}const coin=Math.random()<.5?-1:1;decisions.push({a,b,tb:null,winner:coin<0?a:b});return coin});
+        const dec=decisions[0];const tb=dec.tb;
+        grp.forEach(r=>{r.tie=grp.map(x=>x.c.code);r.note=tb?`Tie · ${tb.label}: ${tb.fmt(r.c[tb.key])}`:'Tie · coin flip'});
+        ties.push({codes:grp.map(x=>x.c.name),by:tb?tb.label:'coin flip',order:grp.map(r=>r.c.name),detail:tb?grp.map(r=>`${r.c.name} ${tb.fmt(r.c[tb.key])}`).join(' vs '):''});
+        res.splice(i,grp.length,...grp)}
+      i=j+1}
+    return {order:res,ties};
+  }
+}
+
+/* ================= RENDERING ================= */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let camY=0,follow='leader';
+function resize(){const st=document.getElementById('stage');const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.floor(st.clientWidth*dpr);cv.height=Math.floor(st.clientHeight*dpr);cv._dpr=dpr}
+window.addEventListener('resize',resize);
+function drawRace(race,me){
+  const dpr=cv._dpr||1,cw=cv.width/dpr,ch=cv.height/dpr,scale=cw/TW,viewH=ch/scale;
+  // camera target
+  let focus=race.marbles[0];
+  const alive=race.marbles.filter(m=>!m.done);
+  let target;
+  if(follow==='me'&&me&&!me.done){target=me.y-viewH*.42}
+  else if(alive.length){const ys=alive.map(m=>m.y).sort((a,b)=>b-a);const lead=ys[0],fourth=ys[Math.min(3,ys.length-1)];target=(lead+fourth)/2-viewH*.45;target=Math.max(target,lead-viewH+90)}
+  else target=FINISH_Y-viewH*.6;
+  target=Math.max(0,Math.min(TRACK_H-viewH,target));
+  camY+= (target-camY)*(race.started?.18:.25);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // background
+  const bg=ctx.createLinearGradient(0,0,0,ch);bg.addColorStop(0,'#0c1322');bg.addColorStop(1,'#080d18');ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
+  ctx.save();ctx.scale(scale,scale);ctx.translate(0,-camY);
+  // subtle grid
+  ctx.strokeStyle='rgba(255,255,255,.035)';ctx.lineWidth=1;const y0=Math.floor(camY/100)*100;for(let y=y0;y<camY+viewH+100;y+=100){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(TW,y);ctx.stroke()}
+  // finish line
+  const fy=FINISH_Y;for(let i=0;i<20;i++){ctx.fillStyle=i%2?'#e8edf5':'#1a2234';ctx.fillRect(i*40,fy-8,40,16)}
+  ctx.fillStyle='rgba(52,209,191,.35)';ctx.fillRect(0,fy+8,TW,3);
+  // segments
+  const T=race.track;
+  ctx.lineCap='round';
+  for(const s of T.segs){ctx.strokeStyle=s.kind==='gate'?'#f2b84b':'#3a4a6a';ctx.lineWidth=s.rad*2;ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();
+    ctx.strokeStyle=s.kind==='gate'?'#ffd784':'#5b6f97';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(s.x1,s.y1-s.rad+2);ctx.lineTo(s.x2,s.y2-s.rad+2);ctx.stroke()}
+  for(const p of T.pegs){const b=p.kind==='bumper';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fillStyle=b?'#34d1bf':'#4c5f86';ctx.fill();if(b){ctx.strokeStyle='rgba(52,209,191,.35)';ctx.lineWidth=6;ctx.stroke()}ctx.beginPath();ctx.arc(p.x-p.r*.3,p.y-p.r*.3,p.r*.3,0,7);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill()}
+  for(const sp of T.spinners){ctx.strokeStyle='#f2b84b';ctx.lineWidth=sp.rad*2;for(let a=0;a<sp.arms;a++){const ang=sp.ang+a*Math.PI/sp.arms;const dx=Math.cos(ang)*sp.len,dy=Math.sin(ang)*sp.len;ctx.beginPath();ctx.moveTo(sp.cx-dx,sp.cy-dy);ctx.lineTo(sp.cx+dx,sp.cy+dy);ctx.stroke()}ctx.beginPath();ctx.arc(sp.cx,sp.cy,sp.rad+6,0,7);ctx.fillStyle='#1e2a40';ctx.fill();ctx.strokeStyle='#f2b84b';ctx.lineWidth=3;ctx.stroke()}
+  // hazards
+  for(const h of T.hazards){
+    if(h.type==='crusher'){const w=h.x2-h.x1;const top=h.railY-h.drop-150;let dy=0;if(h.active){dy=h.drop-4}else{const ph=h.t;const re=Math.min(1,(ph-h.down)/.9);dy=(h.drop-4)*(1-re)}
+      ctx.fillStyle='#2a3650';ctx.fillRect(h.x1-10,top-40,w+20,40);ctx.fillStyle='#5b6f97';ctx.fillRect(h.x1+w/2-8,top,16,dy+10);
+      ctx.fillStyle=h.active?'#f0655b':'#3a4a6a';ctx.fillRect(h.x1,top+dy,w,120);
+      ctx.save();ctx.beginPath();ctx.rect(h.x1,top+dy+100,w,20);ctx.clip();ctx.fillStyle='#f2b84b';for(let x=h.x1-20;x<h.x2+20;x+=24){ctx.beginPath();ctx.moveTo(x,top+dy+120);ctx.lineTo(x+12,top+dy+120);ctx.lineTo(x+24,top+dy+100);ctx.lineTo(x+12,top+dy+100);ctx.fill()}ctx.restore();
+      ctx.fillStyle='rgba(240,101,91,.18)';ctx.fillRect(h.x1,h.railY-h.drop,w,h.drop)}
+    else if(h.type==='saw'){ctx.strokeStyle='#3a4a6a';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(h.cx,h.cy-h.r-70);ctx.lineTo(h.cx,h.cy);ctx.stroke();
+      ctx.save();ctx.translate(h.cx,h.cy);ctx.rotate(h.ang||0);ctx.fillStyle='#c9d2e3';ctx.beginPath();for(let i=0;i<16;i++){const a=i/16*Math.PI*2,a2=a+Math.PI/16;ctx.lineTo(Math.cos(a)*h.r,Math.sin(a)*h.r);ctx.lineTo(Math.cos(a2)*(h.r-9),Math.sin(a2)*(h.r-9))}ctx.closePath();ctx.fill();ctx.fillStyle='#f0655b';ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();ctx.restore()}
+    else if(h.type==='trapdoor'){const w=h.x2-h.x1;ctx.fillStyle=h.active?'#0a0e18':'#f0655b';ctx.fillRect(h.x1,h.railY-8,w,18);if(!h.active){ctx.fillStyle='#1a2234';for(let x=h.x1+6;x<h.x2-6;x+=14)ctx.fillRect(x,h.railY-3,6,8)}}
+  }
+  // marbles
+  for(const m of race.marbles){
+    if(m.dead){if(m.shards&&m.deadT<1.2){ctx.globalAlpha=Math.max(0,1-m.deadT/1.2);const spr=marbleSprite(m.c.code);for(const sh of m.shards){ctx.save();ctx.translate(sh.x,sh.y);ctx.rotate(sh.a);ctx.drawImage(spr,sh.u*100,sh.v*100,28,28,-sh.s/2,-sh.s/2,sh.s,sh.s);ctx.restore()}ctx.globalAlpha=1}continue}
+    if(m.y<camY-60||m.y>camY+viewH+60)continue;
+    const spr=marbleSprite(m.c.code);
+    ctx.save();ctx.translate(m.x,m.y);
+    // shadow
+    ctx.beginPath();ctx.ellipse(3,m.r*.9,m.r*.9,m.r*.35,0,0,7);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fill();
+    if(m===me){ctx.beginPath();ctx.arc(0,0,m.r+5,0,7);ctx.strokeStyle='#f2b84b';ctx.lineWidth=3;ctx.stroke()}
+    ctx.rotate(m.ang);ctx.drawImage(spr,-m.r,-m.r,m.r*2,m.r*2);ctx.restore();
+    // specular highlight (not rotated)
+    ctx.beginPath();ctx.arc(m.x-m.r*.35,m.y-m.r*.4,m.r*.28,0,7);ctx.fillStyle='rgba(255,255,255,.45)';ctx.fill();
+  }
+  ctx.restore();
+  // side minimap in canvas (left rail)
+  const mmH=ch-170,mmX=cw-14,mmY=110;ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(mmX-2,mmY,4,mmH);
+  ctx.fillStyle='rgba(52,209,191,.6)';ctx.fillRect(mmX-5,mmY+mmH*FINISH_Y/TRACK_H,10,2);
+  for(const m of race.marbles){const y=mmY+mmH*Math.min(1,m.y/TRACK_H);ctx.beginPath();ctx.arc(mmX,y,m===me?5:3.5,0,7);ctx.fillStyle=m===me?'#f2b84b':(m.done?'#4fd48a':'#e8edf5');ctx.fill()}
+}
+
+/* ================= TOURNAMENT ================= */
+const ROUNDS=[{name:'Round of 64',heats:8},{name:'Round of 32',heats:4},{name:'Round of 16',heats:2},{name:'Grand Final',heats:1}];
+let T=null; // tournament state
+function newTournament(meCode){
+  const pool=COUNTRIES.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  T={me:COUNTRIES.find(c=>c.code===meCode),rounds:ROUNDS.map(r=>({name:r.name,heats:[]})),ri:0,hi:0,race:null,champion:null,podium:null,eliminated:new Set(),alive:new Set(COUNTRIES.map(c=>c.code)),meOut:null};
+  for(let h=0;h<8;h++)T.rounds[0].heats.push({field:pool.slice(h*8,h*8+8),result:null});
+}
+function currentHeat(){return T.rounds[T.ri].heats[T.hi]}
+function seedNextRound(){
+  const adv=[];T.rounds[T.ri].heats.forEach(h=>h.result.order.slice(0,4).forEach(r=>adv.push(r.c)));
+  // interleave so heat winners are spread out
+  const n=ROUNDS[T.ri+1].heats,heats=Array.from({length:n},()=>[]);
+  adv.forEach((c,i)=>heats[i%n].push(c));
+  T.rounds[T.ri+1].heats=heats.map(f=>({field:f,result:null}));
+}
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+const screens=['pick','race','bracket','champion'];
+function show(id){screens.forEach(s=>$(s).classList.toggle('hidden',s!==id));if(id==='race')resize()}
+let selected=null,soundOn=true,speed=.375,rafId=null,autoTimer=null,prevScreen='race';
+
+// pick grid
+const grid=$('grid');
+function buildGrid(){COUNTRIES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
+  const b=document.createElement('button');b.className='tile';b.dataset.code=c.code;b.setAttribute('aria-label',c.name);
+  b.appendChild(flagEl(c.code,54,36));const s=document.createElement('span');s.textContent=c.name;b.appendChild(s);
+  b.addEventListener('click',()=>select(c.code));grid.appendChild(b);
+})}
+function select(code){selected=code;document.querySelectorAll('.tile').forEach(t=>t.classList.toggle('selected',t.dataset.code===code));const c=COUNTRIES.find(x=>x.code===code);$('selName').textContent=c.name;$('btnStart').disabled=false;drawPreview(code)}
+$('btnRandom').addEventListener('click',()=>select(COUNTRIES[Math.floor(Math.random()*COUNTRIES.length)].code));
+
+// preview marble on hero
+let previewAng=0,previewCode='CA';
+function drawPreview(code){previewCode=code}
+function spinPreview(){const p=$('preview'),c=p.getContext('2d');c.clearRect(0,0,400,400);
+  const g=c.createRadialGradient(200,220,40,200,200,200);g.addColorStop(0,'rgba(242,184,75,.18)');g.addColorStop(1,'rgba(242,184,75,0)');c.fillStyle=g;c.fillRect(0,0,400,400);
+  c.beginPath();c.ellipse(205,330,120,26,0,0,7);c.fillStyle='rgba(0,0,0,.4)';c.fill();
+  const spr=marbleSprite(previewCode,256);c.save();c.translate(200,200);c.rotate(previewAng);c.drawImage(spr,-120,-120,240,240);c.restore();
+  c.beginPath();c.arc(155,150,34,0,7);c.fillStyle='rgba(255,255,255,.4)';c.fill();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)previewAng+=.012;requestAnimationFrame(spinPreview)}
+
+$('btnSound').addEventListener('click',()=>{soundOn=!soundOn;Audio_.init();Audio_.setEnabled(soundOn);$('btnSound').textContent='Sound: '+(soundOn?'on':'off');$('btnSound').setAttribute('aria-pressed',soundOn)});
+const speedLabel=()=>$('btnSpeed').textContent=speed===.375?'Speed: default':speed===.25?'Speed: ¼× slow-mo':'Speed: '+speed+'× real time';speedLabel();
+$('btnSpeed').addEventListener('click',()=>{speed=speed===.375?1:speed===1?2:speed===2?.25:.375;speedLabel()});
+$('btnFollow').addEventListener('click',()=>{follow=follow==='leader'?'me':'leader';$('btnFollow').textContent='Follow: '+(follow==='me'?'my marble':'leader')});
+$('btnSkip').addEventListener('click',()=>{if(T&&T.race&&!T.race.over){if(!T.race.started)T.race.open();while(!T.race.over&&T.race.time<45)T.race.step(1/60);}});
+$('btnBracket').addEventListener('click',()=>{if(!T)return;renderBracket();prevScreen=$('champion').classList.contains('hidden')?'race':'champion';show('bracket')});
+$('btnBackRace').addEventListener('click',()=>show(prevScreen));
+$('btnChampBracket').addEventListener('click',()=>{renderBracket();prevScreen='champion';show('bracket')});
+$('btnAgain').addEventListener('click',()=>{show('pick');$('meChip').classList.add('hidden');$('biRound').textContent='Tournament';$('biHeat').textContent='—'});
+document.addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M')$('btnSound').click();if(e.key===' '&&!$('race').classList.contains('hidden')){const b=document.querySelector('#results .btn.primary');if(b){e.preventDefault();b.click()}}});
+
+$('btnStart').addEventListener('click',()=>{
+  Audio_.init();Audio_.setEnabled(soundOn);Audio_.startMusic();
+  newTournament(selected);
+  const chip=$('meChip');chip.classList.remove('hidden');paintFlagCanvas(chip.querySelector('canvas'),selected);chip.querySelector('span').textContent=T.me.name;
+  show('race');startHeat();
+});
+
+function startHeat(){
+  const heat=currentHeat(),round=T.rounds[T.ri];
+  $('biRound').textContent=round.name;$('biHeat').textContent=ROUNDS[T.ri].heats>1?`${T.hi+1} of ${ROUNDS[T.ri].heats}`:'Final';
+  $('htRound').textContent=round.name;$('htHeat').textContent=ROUNDS[T.ri].heats>1?`Heat ${T.hi+1}`:'Grand Final';
+  $('legend').textContent=T.ri===3?'Final classification · podium decides the cup':'Top 4 advance · bottom 4 out';
+  const race=new Race(heat.field,T.ri===3?12:6);T.race=race;camY=0;
+  race.onBump=v=>Audio_.bump(v);
+  race.onFinish=(m,place)=>{Audio_.finish(place)};
+  race.onDestroy=(m,h)=>{Audio_.crush(h.type)};
+  document.querySelector('#results')?.remove();lastOrderKey='';
+  buildStandings(race);
+  // countdown
+  const ov=$('overlay');let n=3;ov.innerHTML='<div class="count">3</div>';Audio_.beep(false);
+  const tick=setInterval(()=>{n--;if(n>0){ov.innerHTML=`<div class="count">${n}</div>`;Audio_.beep(false)}else{ov.innerHTML='<div class="count">GO</div>';Audio_.beep(true);Audio_.gate();race.open();clearInterval(tick);setTimeout(()=>{ov.innerHTML=''},700)}},900);
+  race._tick=tick;
+  if(rafId)cancelAnimationFrame(rafId);
+  let last=performance.now();
+  const loop=(now)=>{
+    const real=Math.min(.05,(now-last)/1000);last=now;
+    if(!race.over)race.step(real*speed);
+    drawRace(race,race.marbles.find(m=>m.c===T.me));
+    $('clock').textContent=race.time.toFixed(2);
+    updateStandings(race);
+    if(race.over){finishHeat();return}
+    rafId=requestAnimationFrame(loop);
+  };
+  rafId=requestAnimationFrame(loop);
+}
+function buildStandings(race){const ol=$('standings');ol.innerHTML='';race.marbles.forEach(m=>{const li=document.createElement('li');li.dataset.code=m.c.code;if(m.c===T.me)li.classList.add('me');li.innerHTML='<span class="pos"></span>';li.appendChild(flagEl(m.c.code,34,23));const n=document.createElement('div');n.className='n';n.innerHTML=`${m.c.name}<small><i></i></small>`;li.appendChild(n);const t=document.createElement('span');t.className='t';li.appendChild(t);ol.appendChild(li)})}
+let lastOrderKey='';
+function updateStandings(race){
+  const ms=race.marbles.slice().sort((a,b)=>{if(a.dead!==b.dead)return a.dead?1:-1;if(a.done&&b.done)return a.time-b.time;if(a.done!==b.done)return a.done?-1:1;return b.y-a.y});
+  const key=ms.map(m=>m.c.code).join();
+  const ol=$('standings');
+  if(key!==lastOrderKey){lastOrderKey=key;ms.forEach(m=>ol.appendChild(ol.querySelector(`li[data-code="${m.c.code}"]`)))}
+  ms.forEach((m,i)=>{const li=ol.children[i];li.querySelector('.pos').textContent=i+1;li.classList.toggle('done',m.done);li.querySelector('i').style.width=Math.min(100,m.y/FINISH_Y*100).toFixed(1)+'%';li.classList.toggle('dead',m.dead);li.querySelector('.t').textContent=m.dead?'OUT':m.done?m.time.toFixed(2)+'s':(m.y/FINISH_Y*100).toFixed(0)+'%'});
+}
+
+function finishHeat(){
+  const race=T.race,heat=currentHeat();clearInterval(race._tick);$('overlay').innerHTML='';
+  const result=race.classify();heat.result=result;
+  const isFinal=T.ri===3;
+  result.order.forEach((r,i)=>{if(!isFinal&&i>=4){T.eliminated.add(r.c.code);T.alive.delete(r.c.code);if(r.c===T.me)T.meOut={round:T.rounds[T.ri].name,place:i+1}}});
+  if(!isFinal&&result.order.slice(4).some(r=>r.c===T.me))Audio_.eliminated();
+  if(isFinal){T.champion=result.order[0].c;T.podium=result.order.slice(0,3).map(r=>r.c)}
+  showResults(result,isFinal);
+}
+function showResults(result,isFinal){
+  const stage=$('stage');const box=document.createElement('div');box.id='results';
+  const round=T.rounds[T.ri];
+  let rows=result.order.map((r,i)=>{const adv=isFinal?i===0:i<4;const cls=(adv?'adv':'out')+(r.c===T.me?' me':'');
+    return `<li class="${cls}"><span class="pos">${i+1}</span><canvas data-flag="${r.c.code}" width="80" height="54"></canvas><div class="n">${r.c.name}${r.note?`<em>${r.note}</em>`:''}</div><span class="t">${r.dead?'☠ '+r.m.deadHow+' at '+(r.m.best/FINISH_Y*100).toFixed(0)+'%':r.done?r.time.toFixed(2)+'s':'DNF · '+(r.m.best/FINISH_Y*100).toFixed(0)+'%'}</span><span class="tag ${isFinal?(i===0?'win':i<3?'adv':'out'):(adv?'adv':'out')}">${isFinal?(i===0?'Champion':i<3?'Podium':'—'):(adv?'Advances':'Out')}</span></li>`}).join('');
+  const tiebox=result.ties.length?result.ties.map(t=>`<div class="tiebox"><b>Photo finish</b>${t.codes.join(' and ')} tied. Settled by <strong>${t.by}</strong>${t.detail?` — ${t.detail}`:''}. Order: ${t.order.join(' → ')}.</div>`).join(''):'';
+  const meLine=T.meOut&&T.meOut.round===round.name&&result.order.some(r=>r.c===T.me&&result.order.indexOf(r)>=4)?`<div class="tiebox" style="border-color:var(--out)"><b style="color:var(--out)">Your run ends here</b>${T.me.name} finished ${T.meOut.place}th in the ${round.name}. The tournament plays on.</div>`:'';
+  const next=isFinal?'See the champion':(T.hi+1<ROUNDS[T.ri].heats?`Next: ${round.name} · Heat ${T.hi+2}`:`Next: ${ROUNDS[T.ri+1].name}`);
+  box.innerHTML=`<div class="card"><header><div class="r">${round.name} · ${ROUNDS[T.ri].heats>1?'Heat '+(T.hi+1)+' results':'Final classification'}</div><h2>${isFinal?'The cup is decided':'Four advance, four go home'}</h2></header><ol class="res">${rows}</ol>${tiebox}${meLine}<footer><span class="auto">Continuing in <span id="autoN">8</span>s</span><button class="btn small" id="btnHold">Hold</button><button class="btn primary" id="btnNext">${next}</button></footer></div>`;
+  stage.appendChild(box);
+  box.querySelectorAll('canvas[data-flag]').forEach(c=>paintFlagCanvas(c,c.dataset.flag));
+  let n=8;autoTimer=setInterval(()=>{n--;const el=$('autoN');if(el)el.textContent=n;if(n<=0)advance()},1000);
+  $('btnHold').addEventListener('click',()=>{clearInterval(autoTimer);autoTimer=null;box.querySelector('.auto').textContent='Paused — press Next when ready';$('btnHold').disabled=true});
+  $('btnNext').addEventListener('click',advance);
+  function advance(){if(autoTimer)clearInterval(autoTimer);autoTimer=null;box.remove();
+    if(isFinal){showChampion();return}
+    if(T.hi+1<ROUNDS[T.ri].heats){T.hi++}else{seedNextRound();T.ri++;T.hi=0}
+    startHeat()}
+}
+function showChampion(){
+  const c=T.champion;Audio_.fanfare();
+  $('champName').textContent=c.name;
+  const big=$('champBall');const bc=big.getContext('2d');bc.clearRect(0,0,256,256);bc.drawImage(marbleSprite(c.code,256),0,0);bc.beginPath();bc.arc(90,85,26,0,7);bc.fillStyle='rgba(255,255,255,.45)';bc.fill();
+  $('champNote').textContent=c===T.me?'Your marble took the cup.':T.meOut?`${T.me.name} went out in the ${T.meOut.round}.`:`${T.me.name} reached the podium.`;
+  const pod=$('podium');pod.innerHTML='';T.podium.forEach((p,i)=>{const d=document.createElement('div');if(i===0)d.className='first';d.innerHTML=`<b>${i+1}</b>`;d.appendChild(flagEl(p.code,44,30));const s=document.createElement('span');s.textContent=p.name;d.appendChild(s);pod.appendChild(d)});
+  $('biHeat').textContent='Done';show('champion');
+}
+function renderBracket(){
+  const el=$('rounds');el.innerHTML='';
+  T.rounds.forEach((r,ri)=>{const col=document.createElement('div');col.className='round';col.innerHTML=`<h4>${r.name}</h4>`;
+    if(!r.heats.length){const h=document.createElement('div');h.className='heat pending';h.innerHTML=`<div class="hn">${ROUNDS[ri].heats>1?ROUNDS[ri].heats+' heats':'1 race'}</div><div class="row" style="color:var(--muted)">Field not set yet</div>`;col.appendChild(h)}
+    r.heats.forEach((h,hi)=>{const d=document.createElement('div');d.className='heat'+(ri===T.ri&&hi===T.hi&&!h.result?' current':'')+(!h.result&&!(ri===T.ri&&hi===T.hi)?' pending':'');
+      d.innerHTML=`<div class="hn">${ROUNDS[ri].heats>1?'Heat '+(hi+1):'Final'}</div>`;
+      const list=h.result?h.result.order.map(x=>x.c):h.field;
+      list.forEach((c,i)=>{const row=document.createElement('div');const isFinal=ri===3;const st=h.result?(isFinal?(i===0?'adv':''):(i<4?'adv':'out')):'';row.className='row '+st+(c===T.me?' me':'');
+        row.innerHTML=`<span class="p">${h.result?i+1:''}</span>`;row.appendChild(flagEl(c.code,22,15));const s=document.createElement('span');s.textContent=c.name+(h.result&&h.result.order[i].done?' · '+h.result.order[i].time.toFixed(2)+'s':'');row.appendChild(s);d.appendChild(row)});
+      col.appendChild(d)});
+    el.appendChild(col)});
+}
+// flags load first (they are rasterised from SVG), then the page opens with Canada preselected
+loadFlags().then(()=>{buildGrid();select('CA');spinPreview()});
+</script>
+
+</body>
+</html>
