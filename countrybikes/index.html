@@ -71,6 +71,10 @@ kbd{font:700 12px var(--body);background:rgba(255,255,255,.12);border:1px solid 
 #specbar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));z-index:6;display:flex;gap:8px}
 #specbar .btn{background:rgba(10,14,30,.75)}
 body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
+.btn.hard[aria-pressed="true"]{background:linear-gradient(180deg,#e0284a,#9e0d28);border-color:#ff7a90;box-shadow:0 3px 0 #5c0616}
+.rl li.dnp{opacity:.62}
+.rl li.dnp .t{color:var(--bad);font-weight:800}
+.prog i.out{opacity:.25;filter:grayscale(1)}
 .keys{text-align:center;color:var(--muted);font-size:13px;margin:14px 0 0;line-height:1.9}
 
 /* ---------- editor ---------- */
@@ -192,10 +196,11 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
       <label class="riders">Riders <input type="range" id="riders" min="2" max="50" step="1" aria-label="Number of riders"><b id="ridersN">4</b></label>
     </div>
     <div class="row">
+      <button class="btn hard" id="bHard" aria-pressed="false">💀 Hardcore: Off</button>
       <button class="btn" id="bWatch">👁 Watch a race</button>
       <button class="btn" id="bShared" hidden>Race shared track</button>
     </div>
-    <p class="keys"><kbd>↑</kbd> or <kbd>Space</kbd> gas &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> lean back / forward &nbsp;·&nbsp; <kbd>Shift</kbd> turbo<br>Land flat on the slope for a boost. Flip in the air for a bigger one. Don't overheat the turbo.</p>
+    <p class="keys">Hardcore: one crash and you're out of the race.<br><kbd>↑</kbd> or <kbd>Space</kbd> gas &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> lean back / forward &nbsp;·&nbsp; <kbd>Shift</kbd> turbo<br>Land flat on the slope for a boost. Flip in the air for a bigger one. Don't overheat the turbo.</p>
   </div>
 </div>
 
@@ -249,6 +254,7 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
   <button class="btn" id="spPrev" aria-label="Follow the rider ahead">◀</button>
   <button class="btn" id="spLead">Follow leader</button>
   <button class="btn" id="spNext" aria-label="Follow the rider behind">▶</button>
+  <button class="btn" id="spSkip">Results ▸</button>
 </div>
 <div id="count" hidden></div>
 <div id="toast" aria-live="polite"></div>
@@ -595,10 +601,11 @@ function substep(W,b,h){
 }
 function crash(W,b){
   const c=b.c;b.state='crash';b.crashT=0;b.crashes++;
+  if(W.hard&&W.phase!=='count'&&b.fin==null){b.out=true;b.outT=W.raceT;if(W.fx&&b===W.player)onEliminated(W);}
   const s=Math.random()<.5?-1:1;
   b.deb={x:c.x,y:c.y,vx:c.vx*0.75,vy:c.vy*0.6+2.5,a:c.a,av:c.av*0.6+s*(3+Math.random()*4),
     rx:c.x+0.1,ry:c.y+0.9,rvx:c.vx*0.95,rvy:Math.max(c.vy,0)+4.5,ra:c.a,rav:-s*(7+Math.random()*6)};
-  if(W.fx){fxCrash(W,b);if(b===W.player){W.shake=Math.max(W.shake,0.9);toast('CRASH!','hold ← or → to land cleaner');}}
+  if(W.fx){fxCrash(W,b);if(b===W.player){W.shake=Math.max(W.shake,0.9);if(!b.out)toast('CRASH!','hold ← or → to land cleaner');}}
 }
 function updDebris(W,b,dt){
   const d=b.deb;
@@ -627,7 +634,7 @@ function land(W,b){
   if(W.fx){const v=clamp(b.air/1.6,0.2,1);fxLand(W,b,v,b===W.player);if(b===W.player){W.shake=Math.max(W.shake,0.25*v);if(msg){toast(msg,sub);Snd.trick(flips>0);}}}
 }
 function updateBike(W,b,dt){
-  if(b.state==='crash'){updDebris(W,b,dt);b.crashT+=dt;if(b.crashT>1.6)respawn(W,b,Math.max(b.deb.x,b.c.x-1));return;}
+  if(b.state==='crash'){updDebris(W,b,dt);b.crashT+=dt;if(b.out)return;if(b.crashT>1.6)respawn(W,b,Math.max(b.deb.x,b.c.x-1));return;}
   if(b.ghost>0)b.ghost-=dt;
   if(b.fin!=null){b.in.gas=0;b.in.turbo=0;aiLean(b,0.6);}
   else if(b.ai)aiControl(W,b,dt);
@@ -691,7 +698,7 @@ function makeWorld(codes,laps,o){
   const nats=o.player?[o.player,...o.ais]:o.ais,n=nats.length,nl=Math.min(n,8),rows=Math.ceil(n/nl);
   const tr=buildTrack(codes,laps,rows);TR=tr;
   const W={tr,bikes:[],parts:[],t:0,raceT:0,phase:'count',count:3.9,lastCount:4,fx:o.fx!==false,shake:0,look:4,cam:{x:0,y:2,s:40},player:null,doneT:0,demo:!!o.demo,
-    spec:!!o.spec,follow:null,diff:clamp(o.diff==null?1:o.diff,0,3),rk:null};
+    spec:!!o.spec,hard:!!o.hard,endT:0,follow:null,diff:clamp(o.diff==null?1:o.diff,0,3),rk:null};
   const P=AIP[W.diff];
   nats.forEach((nat,i)=>{const ai=!(o.player&&i===0),bench=!!o.bench&&i===0,k=i%nl,row=Math.floor(i/nl);
     const b=newBike(nat,k,ai,bench?1:ai?lerp(P.sk[0],P.sk[1],Math.random()):1,laneY(k,nl));
@@ -701,7 +708,9 @@ function makeWorld(codes,laps,o){
   return W;
 }
 function pickAIs(player,n){const pool=NATIONS.map(x=>x[0]).filter(x=>x!==player);const out=[];while(out.length<n){const k=pool.splice(Math.floor(Math.random()*pool.length),1)[0];out.push(k);}return out;}
-function rankBikes(W){return W.bikes.slice().sort((a,b)=>{if(a.fin!=null&&b.fin!=null)return a.fin-b.fin;if(a.fin!=null)return -1;if(b.fin!=null)return 1;return posX(b)-posX(a);});}
+function rankBikes(W){const g=b=>b.fin!=null?0:b.out?2:1;return W.bikes.slice().sort((a,b)=>{const ga=g(a),gb=g(b);if(ga!==gb)return ga-gb;if(ga===0)return a.fin-b.fin;return posX(b)-posX(a);});}
+function watching(W){return W.spec||(W.player&&W.player.out);}
+function onEliminated(W){toast('ELIMINATED','DNP · watching the rest of the race');W.follow=null;$('#specbar').hidden=false;$('#touch').hidden=true;document.body.classList.add('spec');}
 function posX(b){return b.state==='crash'?b.deb.x:b.c.x;}
 function stepWorld(W,dt){
   TR=W.tr;W.t+=dt;
@@ -1060,7 +1069,7 @@ function drawScreenFx(W,f){
   if(!vig){vig=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*0.35,VW/2,VH/2,Math.max(VW,VH)*0.75);vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,20,.35)');}
   ctx.fillStyle=vig;ctx.fillRect(0,0,VW,VH);
 }
-function focusBike(W){if(W.player)return W.player;if(W.follow!=null)return W.bikes[W.follow];return (W.rk||rankBikes(W))[0];}
+function focusBike(W){if(W.player&&!W.player.out)return W.player;if(W.follow!=null)return W.bikes[W.follow];return (W.rk||rankBikes(W))[0];}
 function updateCam(W,dt){
   const f=focusBike(W),cam=W.cam;const p=f.state==='crash'?{x:f.deb.x,y:f.deb.y}:f.c;const vx=f.state==='crash'?f.deb.vx:f.c.vx;
   W.look+=(clamp(vx*0.2,-2,4.5)-W.look)*Math.min(1,dt*1.5);
@@ -1074,16 +1083,16 @@ function render(W){
   drawTrack(W,v);
   const order=W.bikes.filter(b=>{const x=posX(b);return x>v.L-4&&x<v.R+4;}).sort((a,b)=>b.ly-a.ly);for(const b of order)drawBike(W,b);
   drawParts(W);drawFront(W,v);
-  if((W.player||W.spec)&&W.bikes.length>1){const f=focusBike(W),q=f.state==='crash'?{x:f.deb.x,y:f.deb.y}:f.c,x=q.x+f.off.x,y=q.y+f.off.y+2.25+Math.sin(W.t*5)*0.08;
+  if((W.player||W.spec)&&W.bikes.length>1&&!(W.player&&W.player.out&&W.player.crashT<2)){const f=focusBike(W),q=f.state==='crash'?{x:f.deb.x,y:f.deb.y}:f.c,x=q.x+f.off.x,y=q.y+f.off.y+2.25+Math.sin(W.t*5)*0.08;
     ctx.fillStyle='#ffb21e';ctx.strokeStyle='#1b1405';ctx.lineWidth=0.06;ctx.beginPath();ctx.moveTo(x-0.28,y+0.34);ctx.lineTo(x+0.28,y+0.34);ctx.lineTo(x,y);ctx.closePath();ctx.fill();ctx.stroke();
-    if(W.player)textW('YOU',x,y+0.62,0.42,'#ffb21e');}
+    if(W.player&&f===W.player)textW('YOU',x,y+0.62,0.42,'#ffb21e');}
   drawScreenFx(W,focusBike(W));
 }
 
 /* =====================================================================
    UI / GAME STATE
    ===================================================================== */
-const S={mode:'title',world:null,demo:null,demoN:0,K:{gas:0,turbo:0,back:0,fwd:0},diff:clamp(store.get('cb_diff',1),0,3),riders:clamp(store.get('cb_riders',4),2,MAX_RIDERS),nation:store.get('cb_nation','ca'),
+const S={mode:'title',world:null,demo:null,demoN:0,K:{gas:0,turbo:0,back:0,fwd:0},diff:clamp(store.get('cb_diff',1),0,3),riders:clamp(store.get('cb_riders',4),2,MAX_RIDERS),hard:!!store.get('cb_hard',false),nation:store.get('cb_nation','ca'),
   current:null,hudT:0,results:false};
 if(!NAT_NAME[S.nation])S.nation='ca';
 const ED={codes:(store.get('cb_track',null)||PRESETS[0].codes).split('').filter(c=>PIECE[c]),sel:-1,laps:store.get('cb_laps',2),scroll:0,clearArm:false};
@@ -1096,7 +1105,7 @@ function showLights(n){const el=$('#count');el.hidden=false;el.innerHTML='<div c
 function showGo(){const el=$('#count');el.hidden=false;el.innerHTML='<div class="go">GO!</div>';setTimeout(()=>{if(S.world&&S.world.phase!=='count')el.hidden=true;},900);}
 function setMode(m){
   S.mode=m;$('#title').hidden=m!=='title';$('#editor').hidden=m!=='editor';$('#hud').hidden=!(m==='race'||m==='pause');$('#results').hidden=m!=='results';$('#pause').hidden=m!=='pause';
-  const sp=!!(S.world&&S.world.spec)&&(m==='race'||m==='pause');
+  const sp=!!(S.world&&watching(S.world))&&(m==='race'||m==='pause');
   $('#touch').hidden=!(m==='race'&&touchUI()&&!sp);$('#specbar').hidden=!(m==='race'&&sp);document.body.classList.toggle('touch',touchUI());document.body.classList.toggle('spec',sp);if(m!=='race'){$('#count').hidden=true;}
   $('#rotate').hidden=!(VH>VW*1.15&&m==='race');
   Snd.setRace(m==='race');
@@ -1106,7 +1115,7 @@ let isTouch=false;function touchUI(){return isTouch||matchMedia('(pointer:coarse
 function newDemo(){const p=PRESETS[S.demoN++%PRESETS.length];const nats=pickAIs('xx',4);S.demo=makeWorld(p.codes.split(''),1,{ais:nats,diff:2,demo:true});S.demo.count=1.2;}
 function startRace(codes,laps,spec){
   spec=!!spec;S.current={codes:codes.slice(),laps,spec};const n=S.riders;
-  S.world=spec?makeWorld(codes,laps,{ais:pickAIs('xx',n),diff:S.diff,spec:true}):makeWorld(codes,laps,{player:S.nation,ais:pickAIs(S.nation,n-1),diff:S.diff});
+  S.world=spec?makeWorld(codes,laps,{ais:pickAIs('xx',n),diff:S.diff,spec:true,hard:S.hard}):makeWorld(codes,laps,{player:S.nation,ais:pickAIs(S.nation,n-1),diff:S.diff,hard:S.hard});
   $('#hWho').hidden=!spec;$('#hOf').textContent='/'+n;$('#rAgain').textContent=spec?'Watch again':'Race again';
   S.K={gas:0,turbo:0,back:0,fwd:0};$('#toast').innerHTML='';buildProg(S.world);setMode('race');
 }
@@ -1115,29 +1124,34 @@ function buildProg(W){const el=$('#hProg');el.innerHTML='';const tr=W.tr,span=tr
   W.dots=W.bikes.map(b=>{const d=document.createElement('i');if(b===W.player)d.className='me';d.style.backgroundImage=`url(${flagURL(b.nation)})`;el.appendChild(d);return d;});}
 function updHud(W){
   const p=focusBike(W),tr=W.tr,rk=W.rk||rankBikes(W),pos=rk.indexOf(p)+1;
-  if(W.spec)$('#hWho').textContent=NAT_NAME[p.nation]+(W.follow==null?' · leader':'');
+  const wt=watching(W);$('#hWho').hidden=!wt;if(wt)$('#hWho').textContent=(W.spec?'':'Eliminated · watching ')+NAT_NAME[p.nation]+(W.follow==null?' · leader':'')+(p.out?' · OUT':'');
   if(!W.hudN||++W.hudN%3===0){W.hudN=W.hudN||1;const show=W.spec?rk.slice(0,5):rk.slice(0,3);const ol=$('#hBoard');let h='';
-    const row=(b,i)=>`<li class="${b===p?'me':''}"><b>${i+1}</b><img alt="" src="${flagURL(b.nation)}">${b===W.player?'You':NAT_NAME[b.nation]}</li>`;
+    const row=(b,i)=>`<li class="${b===p?'me':''}"><b>${b.out?'✕':i+1}</b><img alt="" src="${flagURL(b.nation)}">${b===W.player?'You':NAT_NAME[b.nation]}</li>`;
     show.forEach((b,i)=>h+=row(b,i));if(pos>show.length){if(pos>show.length+1)h+='<li class="gap">⋯</li>';h+=row(p,pos-1);}ol.innerHTML=h;}
   $('#hPos').textContent=pos;$('#hSuf').textContent=ord(pos).slice(-2);
   $('#hLap').textContent=tr.laps>1?`LAP ${Math.min(tr.laps,p.lap+1)}/${tr.laps}`:(p.fin!=null?'FINISHED':'1 LAP');
-  $('#hTime').textContent=fmtT(p.fin!=null?p.fin:W.raceT);if(W.spec)$('#hLap').textContent=tr.laps>1?`LAP ${Math.min(tr.laps,p.lap+1)}/${tr.laps}`:'1 LAP';
+  $('#hTime').textContent=fmtT(p.fin!=null?p.fin:W.raceT);if(wt)$('#hLap').textContent=tr.laps>1?`LAP ${Math.min(tr.laps,p.lap+1)}/${tr.laps}`:'1 LAP';
   $('#hSpd').textContent=Math.round(Math.hypot(p.c.vx,p.c.vy)*3.6*(p.state==='ride'?1:0));
   $('#hHeat').style.width=p.heat+'%';$('#hHeatBox').classList.toggle('hot',p.over>0||p.heat>80);$('#hHeatTxt').textContent=p.over>0?'OVERHEAT!':'TURBO';
-  const span=tr.finishX-tr.startX;W.bikes.forEach((b,i)=>{W.dots[i].style.left=clamp((posX(b)-tr.startX)/span,0,1)*100+'%';});
+  const span=tr.finishX-tr.startX;W.bikes.forEach((b,i)=>{W.dots[i].style.left=clamp((posX(b)-tr.startX)/span,0,1)*100+'%';if(b.out&&!W.dots[i].classList.contains('out'))W.dots[i].classList.add('out');});
 }
 function showResults(W){
-  const rk=rankBikes(W),p=W.player,pos=rk.indexOf(p)+1;const lead=rk[0];
+  if(S.mode==='results')return;
+  const rk=rankBikes(W),p=W.player,pos=rk.indexOf(p)+1;const lead=rk[0];const fin=rk.filter(b=>b.fin!=null),alive=rk.filter(b=>!b.out),placed=rk.filter(b=>!b.out).length;
   // estimate unfinished times
-  for(const b of rk)if(b.fin==null){const rem=W.tr.finishX-posX(b);b.est=W.raceT+Math.max(0,rem)/Math.max(8,(posX(b)-W.tr.startX)/Math.max(1,W.raceT));}
-  $('#rTitle').textContent=W.spec?NAT_NAME[lead.nation]+' wins!':pos===1?'You win!':ord(pos)+' place';
-  $('#rSub').textContent=`${PRESET_NAME(S.current.codes)} · ${S.current.laps} lap${S.current.laps>1?'s':''} · ${Math.round(W.tr.finishX-W.tr.startX)} m · ${W.bikes.length} riders · ${AIP[W.diff].name}`;
+  for(const b of rk)if(b.fin==null&&!b.out){const rem=W.tr.finishX-posX(b);b.est=W.raceT+Math.max(0,rem)/Math.max(8,(posX(b)-W.tr.startX)/Math.max(1,W.raceT));}
+  const lb=alive[0];
+  $('#rTitle').textContent=!lb?'No finishers!':W.spec?NAT_NAME[lb.nation]+' wins!':p.out?'Eliminated':pos===1?'You win!':ord(pos)+' place';
+  $('#rSub').textContent=`${PRESET_NAME(S.current.codes)} · ${S.current.laps} lap${S.current.laps>1?'s':''} · ${Math.round(W.tr.finishX-W.tr.startX)} m · ${W.bikes.length} riders · ${AIP[W.diff].name}${W.hard?` · Hardcore (${rk.length-placed} out)`:''}`;
   const ol=$('#rList');ol.innerHTML='';
-  rk.forEach((b,i)=>{const li=document.createElement('li');if(b===p)li.className='me';const t=b.fin!=null?b.fin:b.est;
-    li.innerHTML=`<span class="p">${i+1}</span><img alt="" src="${flagURL(b.nation)}"><span>${b===p?'You · ':''}${NAT_NAME[b.nation]}</span><span class="t">${i===0?fmtT(t):'+'+(t-(lead.fin!=null?lead.fin:lead.est)).toFixed(2)+(b.fin==null?'*':'')}</span>`;ol.appendChild(li);});
+  const lt=lb?(lb.fin!=null?lb.fin:lb.est):0;
+  rk.forEach((b,i)=>{const li=document.createElement('li');li.className=(b===p?'me ':'')+(b.out?'dnp':'');const t=b.fin!=null?b.fin:b.est;
+    const tt=b.out?'DNP':b===lb?fmtT(t):'+'+(t-lt).toFixed(2)+(b.fin==null?'*':'');
+    li.innerHTML=`<span class="p">${b.out?'—':i+1}</span><img alt="" src="${flagURL(b.nation)}"><span>${b===p?'You · ':''}${NAT_NAME[b.nation]}</span><span class="t">${tt}</span>`;ol.appendChild(li);});
   const key='cb_best_'+S.current.codes.join('')+'_'+S.current.laps;const prev=store.get(key,null);let txt='';
   if(p&&p.fin!=null){if(prev==null||p.fin<prev){store.set(key,p.fin);txt=prev==null?`Track record set: ${fmtT(p.fin)}`:`New track record! ${fmtT(p.fin)} (was ${fmtT(prev)})`;}else txt=`Track record: ${fmtT(prev)}`;}
-  if(W.spec)txt=`Fastest lap time: ${fmtT(lead.fin!=null?lead.fin:lead.est)}`;
+  if(W.spec)txt=lb?`Winning time: ${fmtT(lt)}`:'Every rider crashed out.';
+  else if(p.out)txt='DNP: crashed out at '+fmtT(p.outT)+(lb?` · won by ${NAT_NAME[lb.nation]} in ${fmtT(lt)}`:'');
   else if(p.flips)txt+=(txt?' · ':'')+`${p.flips} flip${p.flips>1?'s':''}`;
   $('#rBest').textContent=txt;
   setMode('results');requestAnimationFrame(()=>{const me=$('#rList .me');if(me)me.scrollIntoView({block:'nearest'});});
@@ -1155,6 +1169,8 @@ function PRESET_NAME(codes){const s=codes.join('');const p=PRESETS.find(x=>x.cod
   $('#bQuick').onclick=()=>{startRace(randomTrack(),2);};
   $('#bWatch').onclick=()=>{startRace(randomTrack(),2,true);};
   const rs=$('#riders');rs.value=S.riders;$('#ridersN').textContent=S.riders;
+  const hb=$('#bHard');const setH=v=>{S.hard=v;store.set('cb_hard',v);hb.setAttribute('aria-pressed',v?'true':'false');hb.textContent='💀 Hardcore: '+(v?'On':'Off');};
+  setH(S.hard);hb.onclick=()=>{setH(!S.hard);Snd.click();msg(S.hard?'Hardcore on: one crash and you\'re out.':'Hardcore off: crashed riders respawn.');};
   rs.oninput=()=>{S.riders=+rs.value;$('#ridersN').textContent=S.riders;store.set('cb_riders',S.riders);};
   $('#bBuild').onclick=()=>{setMode('editor');edRefresh();};
   $('#bShared').onclick=()=>{startRace(ED.codes,ED.laps);};
@@ -1260,8 +1276,9 @@ $('#pEdit').onclick=()=>$('#rEdit').onclick();
 $('#pMenu').onclick=()=>setMode('title');
 $('#bMusic').onclick=()=>{const on=Snd.toggleMusic();$('#bMusic').style.opacity=on?1:.45;msg(on?'Music on':'Music off');};
 $('#bMusic').style.opacity=Snd.isMusic()?1:.45;
-function specCycle(d){const W=S.world;if(!W||!W.spec)return;const rk=W.rk||rankBikes(W);if(d===0){W.follow=null;msg('Following the leader');return;}
+function specCycle(d){const W=S.world;if(!W||!watching(W))return;const rk=W.rk||rankBikes(W);if(d===0){W.follow=null;msg('Following the leader');return;}
   const cur=focusBike(W);let i=rk.indexOf(cur)+d;i=clamp(i,0,rk.length-1);W.follow=W.bikes.indexOf(rk[i]);Snd.click();}
+$('#spSkip').onclick=()=>{if(S.world&&S.mode==='race')showResults(S.world);};
 $('#spPrev').onclick=()=>specCycle(-1);$('#spNext').onclick=()=>specCycle(1);$('#spLead').onclick=()=>specCycle(0);
 function togglePause(){if(S.mode==='race')setMode('pause');else if(S.mode==='pause')setMode('race');}
 
@@ -1269,7 +1286,7 @@ function togglePause(){if(S.mode==='race')setMode('pause');else if(S.mode==='pau
 const KEYMAP={ArrowUp:'gas',KeyW:'gas',Space:'gas',KeyJ:'gas',ArrowLeft:'back',KeyA:'back',ArrowRight:'fwd',KeyD:'fwd',ShiftLeft:'turbo',ShiftRight:'turbo',KeyK:'turbo',KeyX:'turbo'};
 addEventListener('keydown',e=>{
   unlock();const k=KEYMAP[e.code];
-  if(S.mode==='race'&&S.world&&S.world.spec){if(e.code==='ArrowLeft'||e.code==='KeyA'){specCycle(-1);e.preventDefault();}else if(e.code==='ArrowRight'||e.code==='KeyD'){specCycle(1);e.preventDefault();}else if(e.code==='KeyL'||e.code==='ArrowUp'){specCycle(0);e.preventDefault();}}
+  if(S.mode==='race'&&S.world&&watching(S.world)){if(e.code==='ArrowLeft'||e.code==='KeyA'){specCycle(-1);e.preventDefault();}else if(e.code==='ArrowRight'||e.code==='KeyD'){specCycle(1);e.preventDefault();}else if(e.code==='KeyL'||e.code==='ArrowUp'){specCycle(0);e.preventDefault();}}
   else if(S.mode==='race'&&k){S.K[k]=1;e.preventDefault();}
   if(e.code==='Escape'||e.code==='KeyP'){if(S.mode==='race'||S.mode==='pause'){togglePause();e.preventDefault();}}
   if(e.code==='KeyR'&&(S.mode==='race'||S.mode==='pause'||S.mode==='results')&&S.current)startRace(S.current.codes,S.current.laps,S.current.spec);
@@ -1297,7 +1314,9 @@ function frame(now){
     if(S.mode!=='pause'){acc+=dt;let n=0;while(acc>=STEP&&n<5){stepWorld(W,STEP);acc-=STEP;n++;}if(n>=5)acc=0;}
     updateCam(W,dt);render(W);
     if(W===S.world&&S.mode==='race'){updHud(W);
-      if(W.phase==='done'&&(W.doneT>2.2&&(W.bikes.every(b=>b.fin!=null)||W.doneT>(W.spec?9:7))))showResults(W);}
+      const alive=W.bikes.filter(b=>!b.out),win=alive.find(b=>b.fin!=null);
+      const over=W.phase!=='count'&&(alive.every(b=>b.fin!=null)||(watching(W)?(win&&W.raceT-win.fin>9):(W.phase==='done'&&W.doneT>7)));
+      W.endT=over?W.endT+dt:0;if(W.endT>2.2)showResults(W);}
     if(W===S.demo){const lead=rankBikes(W)[0];if(lead.fin!=null&&W.raceT-lead.fin>4)newDemo();}
     // engine audio
     if(Snd.ctx()){
@@ -1322,10 +1341,10 @@ window.__CB={PIECES:PIECES.map(p=>p.c).join(''),PRESETS,buildTrack,heightsOK,ran
     while(t<(maxT||240)){stepWorld(W,STEP);t+=STEP;if(W.bikes[0].fin!=null&&W.bikes.filter(b=>b.fin!=null).length>=Math.min(3,W.bikes.length))break;}
     const rk=rankBikes(W);return {rank:rk.indexOf(W.bikes[0])+1,crashes:W.bikes[0].crashes,aiCrashes:W.bikes.slice(1).reduce((a,b)=>a+b.crashes,0)/(W.bikes.length-1)};},
   perf(n,frames){const W=makeWorld('FKTWDFOB'.split(''),1,{ais:pickAIs('xx',n),diff:1});W.count=0;const t0=performance.now();for(let i=0;i<frames;i++)stepWorld(W,STEP);return (performance.now()-t0)/frames;},
-  sim(codes,laps,maxT,diff){laps=laps||1;const W=makeWorld(codes.split(''),laps||1,{ais:['ca','us','fr','jp'],diff:diff==null?1:diff,fx:false});
-    let t=0;while(t<(maxT||240)){stepWorld(W,STEP);t+=STEP;if(W.bikes.every(b=>b.fin!=null))break;}
+  sim(codes,laps,maxT,diff,hard){laps=laps||1;const W=makeWorld(codes.split(''),laps||1,{ais:['ca','us','fr','jp'],diff:diff==null?1:diff,fx:false,hard:!!hard});
+    let t=0;while(t<(maxT||240)){stepWorld(W,STEP);t+=STEP;if(W.bikes.every(b=>b.fin!=null||b.out))break;}
     const bad=W.bikes.some(b=>!Number.isFinite(b.c.x+b.c.y));
-    return {len:Math.round(W.tr.finishX-W.tr.startX),t:+t.toFixed(2),bad,bikes:W.bikes.map(b=>({fin:b.fin&&+b.fin.toFixed(2),x:Math.round(posX(b)),crashes:b.crashes,respawns:b.respawns,flips:b.flips,maxKmh:Math.round(b.maxSp*3.6)}))};},
+    return {len:Math.round(W.tr.finishX-W.tr.startX),t:+t.toFixed(2),bad,bikes:W.bikes.map(b=>({out:!!b.out,fin:b.fin&&+b.fin.toFixed(2),x:Math.round(posX(b)),crashes:b.crashes,respawns:b.respawns,flips:b.flips,maxKmh:Math.round(b.maxSp*3.6)}))};},
   trace(codes,T,i,diff,laps){const W=makeWorld(codes.split(''),laps||1,{ais:['ca','us','fr','jp'],diff:diff==null?1:diff,fx:false});const b=W.bikes[i||0],out=[];let t=0,n=0;
     while(t<T){stepWorld(W,STEP);t+=STEP;if(n++%6===0)out.push([+t.toFixed(2),+b.c.x.toFixed(2),+b.c.y.toFixed(2),+b.c.a.toFixed(2),b.state,+b.c.vx.toFixed(1),b.w[0].gt,b.w[1].gt,b.crashes,+(b.w[0].av*-PH.R).toFixed(1),b.in.lean.toFixed?+b.in.lean.toFixed(2):b.in.lean]);}return out;},
   state:()=>S, keys:(k,v)=>{S.K[k]=v;}, world:()=>S.world};
