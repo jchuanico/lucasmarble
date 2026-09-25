@@ -140,6 +140,9 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
 .tbtn.gas{width:104px;height:104px;background:rgba(255,90,31,.55);border-color:#ffb58f;font-size:20px}
 .tbtn.turbo{font-size:13px;background:rgba(38,214,245,.35);border-color:#9ef0ff}
 .tbtn.gas.on{background:rgba(255,90,31,.85)}
+.tbtn.gas{width:118px;height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tbtn.gas small{font:700 10px var(--body);letter-spacing:.04em;opacity:.85}
+.tbtn.gas.turbo{background:rgba(38,214,245,.8);border-color:#dff9ff;box-shadow:0 0 26px rgba(38,214,245,.8)}
 @media (max-width:640px){body.touch .hud-b{bottom:auto;top:calc(max(10px,env(safe-area-inset-top)) + 96px)}}
 #count{position:fixed;inset:0;z-index:7;display:grid;place-items:center;pointer-events:none}
 #count .lights{display:flex;gap:14px;padding:14px 18px;border-radius:20px;background:rgba(8,10,20,.75);border:2px solid rgba(255,255,255,.2)}
@@ -172,7 +175,7 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
 @media (max-width:640px){
   .pos{font-size:40px} .time{font-size:17px} .speed b{font-size:28px} .speed{min-width:80px;font-size:13px} .heat{width:110px}
   .hud-c{width:40vw}
-  .tbtn{width:66px;height:66px;font-size:22px} .tbtn.gas{width:88px;height:88px}
+  .tbtn{width:66px;height:66px;font-size:22px} .tbtn.gas{width:100px;height:100px}
 }
 @media (prefers-reduced-motion:reduce){#toast div,#count .go{animation-duration:.01s}}
 @media (max-height:520px){
@@ -211,7 +214,7 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
       <button class="btn" id="bWatch">👁 Watch a race</button>
       <button class="btn" id="bShared" hidden>Race shared track</button>
     </div>
-    <p class="keys">Hardcore: one crash and you're out of the race.<br><kbd>↑</kbd> or <kbd>Space</kbd> gas &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> lean back / forward &nbsp;·&nbsp; <kbd>Shift</kbd> turbo<br>Land flat on the slope for a boost. Flip in the air for a bigger one. Don't overheat the turbo.</p>
+    <p class="keys">Hardcore: one crash and you're out of the race.<br><kbd>↑</kbd> or <kbd>Space</kbd> gas &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> lean back / forward &nbsp;·&nbsp; <b>tap-tap and hold gas</b> for turbo<br>Land flat on the slope for a boost. Flip in the air for a bigger one. Don't overheat the turbo.</p>
   </div>
 </div>
 
@@ -260,7 +263,7 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
 </div>
 <div id="touch" hidden>
   <div class="tl"><button class="tbtn" data-k="back" aria-label="Lean back">⟲</button><button class="tbtn" data-k="fwd" aria-label="Lean forward">⟳</button></div>
-  <div class="tr"><button class="tbtn turbo" data-k="turbo">TURBO</button><button class="tbtn gas" data-k="gas">GAS</button></div>
+  <div class="tr"><button class="tbtn gas" data-k="gas" aria-label="Gas. Tap twice and hold for turbo.">GAS<small>tap-tap = turbo</small></button></div>
 </div>
 <div id="specbar" hidden>
   <button class="btn" id="spPrev" aria-label="Follow the rider ahead">◀</button>
@@ -308,7 +311,7 @@ body.spec .hud-b{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}
       <button class="btn cyan" id="pEdit">Edit track</button>
       <button class="btn ghost" id="pMenu">Menu</button>
     </div>
-    <p class="keys"><kbd>↑</kbd>/<kbd>Space</kbd> gas · <kbd>←</kbd><kbd>→</kbd> lean · <kbd>Shift</kbd> turbo · <kbd>R</kbd> restart · <kbd>Esc</kbd> pause</p>
+    <p class="keys"><kbd>↑</kbd>/<kbd>Space</kbd> gas · <kbd>←</kbd><kbd>→</kbd> lean · tap-tap &amp; hold gas = turbo · <kbd>R</kbd> restart · <kbd>Esc</kbd> pause</p>
   </div>
 </div>
 
@@ -719,7 +722,7 @@ function aiControl(W,b,dt){
   aiLean(b,P.gain,b.aiErr||0);
 }
 function playerControl(W,b){
-  const K=S.K;b.in.gas=K.gas?1:0;b.in.turbo=K.turbo?1:0;b.in.lean=(K.fwd?1:0)-(K.back?1:0);
+  const K=S.K;b.in.gas=K.gas?1:0;b.in.turbo=(K.turbo||S.pump)&&K.gas?1:0;b.in.lean=(K.fwd?1:0)-(K.back?1:0);
   if(b.in.lean===0&&!b.touch&&!inLoop(b)){aiLean(b,0.6);}
 }
 
@@ -1200,7 +1203,7 @@ function startRace(codes,laps,spec){
   spec=!!spec;S.current={codes:codes.slice(),laps,spec};const n=S.riders;
   S.world=spec?makeWorld(codes,laps,{ais:pickAIs('xx',n),diff:S.diff,spec:true,hard:S.hard}):makeWorld(codes,laps,{player:S.nation,ais:pickAIs(S.nation,n-1),diff:S.diff,hard:S.hard});
   $('#hWho').hidden=!spec;$('#hOf').textContent='/'+n;$('#rAgain').textContent=spec?'Watch again':'Race again';
-  S.K={gas:0,turbo:0,back:0,fwd:0};$('#toast').innerHTML='';buildProg(S.world);setMode('race');
+  S.K={gas:0,turbo:0,back:0,fwd:0};gasReset();$('#toast').innerHTML='';buildProg(S.world);setMode('race');
 }
 function buildProg(W){const el=$('#hProg');el.innerHTML='';const tr=W.tr,span=tr.finishX-tr.startX;
   for(const lx of tr.lapXs){const m=document.createElement('div');m.className='lapmk';m.style.left=((lx-tr.startX)/span*100)+'%';el.appendChild(m);}
@@ -1215,7 +1218,7 @@ function updHud(W){
   $('#hLap').textContent=tr.laps>1?`LAP ${Math.min(tr.laps,p.lap+1)}/${tr.laps}`:(p.fin!=null?'FINISHED':'1 LAP');
   $('#hTime').textContent=fmtT(p.fin!=null?p.fin:W.raceT);if(wt)$('#hLap').textContent=tr.laps>1?`LAP ${Math.min(tr.laps,p.lap+1)}/${tr.laps}`:'1 LAP';
   $('#hSpd').textContent=Math.round(Math.hypot(p.c.vx,p.c.vy)*3.6*(p.state==='ride'?1:0));
-  $('#hHeat').style.width=p.heat+'%';$('#hHeatBox').classList.toggle('hot',p.over>0||p.heat>80);$('#hHeatTxt').textContent=p.over>0?'OVERHEAT!':'TURBO';
+  $('#hHeat').style.width=p.heat+'%';$('#hHeatBox').classList.toggle('hot',p.over>0||p.heat>80);$('#hHeatTxt').textContent=p.over>0?'OVERHEAT!':p.in.turbo&&!W.spec&&p===W.player?'TURBO!':W.player&&p===W.player?'TAP-TAP GAS = TURBO':'TURBO';
   const span=tr.finishX-tr.startX;W.bikes.forEach((b,i)=>{W.dots[i].style.left=clamp((posX(b)-tr.startX)/span,0,1)*100+'%';if(b.out&&!W.dots[i].classList.contains('out'))W.dots[i].classList.add('out');});
 }
 function showResults(W){
@@ -1395,11 +1398,17 @@ $('#rvIn').onclick=()=>reviewZoom(1.3);$('#rvOut').onclick=()=>reviewZoom(1/1.3)
 function togglePause(){if(S.mode==='race')setMode('pause');else if(S.mode==='pause')setMode('race');}
 
 /* ---------- input ---------- */
+const gasSrc=new Set();let gasDownT=-1e9,gasUpT=-1e9;S.pump=false;
+function gasReset(){gasSrc.clear();S.pump=false;S.K.gas=0;const g=document.querySelector('.tbtn.gas');if(g)g.classList.remove('on','turbo');}
+function setGas(src,on){const was=gasSrc.size>0;if(on)gasSrc.add(src);else gasSrc.delete(src);const now=performance.now(),is=gasSrc.size>0;
+  if(is&&!was){if(now-gasUpT<320&&S.mode==='race'){S.pump=true;Snd.boost();}gasDownT=now;}
+  else if(!is&&was){S.pump=false;gasUpT=now;}
+  S.K.gas=is?1:0;const g=document.querySelector('.tbtn.gas');if(g){g.classList.toggle('on',is);g.classList.toggle('turbo',S.pump);}}
 const KEYMAP={ArrowUp:'gas',KeyW:'gas',Space:'gas',KeyJ:'gas',ArrowLeft:'back',KeyA:'back',ArrowRight:'fwd',KeyD:'fwd',ShiftLeft:'turbo',ShiftRight:'turbo',KeyK:'turbo',KeyX:'turbo'};
 addEventListener('keydown',e=>{
   unlock();const k=KEYMAP[e.code];
   if(S.mode==='race'&&S.world&&watching(S.world)){if(e.code==='ArrowLeft'||e.code==='KeyA'){specCycle(-1);e.preventDefault();}else if(e.code==='ArrowRight'||e.code==='KeyD'){specCycle(1);e.preventDefault();}else if(e.code==='KeyL'||e.code==='ArrowUp'){specCycle(0);e.preventDefault();}}
-  else if((S.mode==='race'||S.mode==='review')&&k){S.K[k]=1;e.preventDefault();}
+  else if((S.mode==='race'||S.mode==='review')&&k){if(k==='gas'){if(!e.repeat)setGas(e.code,1);}else S.K[k]=1;e.preventDefault();}
   if(S.mode==='review'&&(e.code==='Escape'||e.code==='Enter')){$('#rvBack').onclick();e.preventDefault();return;}
   if(S.mode==='review'&&(e.code==='PageDown'||e.code==='KeyN'))reviewJump(1);
   if(S.mode==='review'&&(e.code==='PageUp'||e.code==='KeyB'))reviewJump(-1);
@@ -1410,10 +1419,10 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyR'&&(S.mode==='race'||S.mode==='pause'||S.mode==='results')&&S.current)startRace(S.current.codes,S.current.laps,S.current.spec);
   if(e.code==='Enter'&&S.mode==='results'&&!e.repeat&&performance.now()-(S.resT||0)>400)startRace(S.current.codes,S.current.laps,S.current.spec);
 });
-addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)S.K[k]=0;});
-addEventListener('blur',()=>{S.K={gas:0,turbo:0,back:0,fwd:0};});
-document.querySelectorAll('.tbtn').forEach(btn=>{const k=btn.dataset.k;const on=v=>{S.K[k]=v;btn.classList.toggle('on',!!v);};
-  btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);on(1);unlock();});
+addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k==='gas')setGas(e.code,0);else if(k)S.K[k]=0;});
+addEventListener('blur',()=>{S.K={gas:0,turbo:0,back:0,fwd:0};gasReset();});
+document.querySelectorAll('.tbtn').forEach(btn=>{const k=btn.dataset.k;const on=v=>{if(k==='gas'){setGas('touch',v);return;}S.K[k]=v;btn.classList.toggle('on',!!v);};
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();try{btn.setPointerCapture(e.pointerId);}catch(err){}on(1);unlock();});
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>btn.addEventListener(t,()=>on(0)));
   btn.addEventListener('contextmenu',e=>e.preventDefault());});
 addEventListener('touchstart',()=>{if(!isTouch){isTouch=true;if(S.mode==='race')setMode('race');}},{passive:true});
