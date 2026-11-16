@@ -2,7 +2,7 @@
 window.CONFIG = {
   // Amazon Associates tracking ID (sign up at https://affiliate-program.amazon.com).
   // Looks like "yourname-20". Leave "" until approved; links still work, just untracked.
-  amazonTag: "",
+  amazonTag: "squishfinder-20",
   // Optional extra stores. {q} is replaced with the search text. Paste your
   // affiliate deep-link format here (e.g. Walmart / Target via Impact.com).
   extraStores: [
