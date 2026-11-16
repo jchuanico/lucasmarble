@@ -4,7 +4,7 @@ window.CONFIG = {
   // Amazon.ca: https://associates.amazon.ca   Amazon.com: https://affiliate-program.amazon.com
   stores: [
     { name: "Amazon.ca", flag: "🇨🇦", domain: "www.amazon.ca", tag: "squishfinder-20" },
-    { name: "Amazon.com", flag: "🇺🇸", domain: "www.amazon.com", tag: "" } // add your .com tag when approved
+    { name: "Amazon.com", flag: "🇺🇸", domain: "www.amazon.com", tag: "squishfinde0e-20" }
   ],
   // Shared poll: Google Apps Script web app URL (see apps-script.gs). Empty = votes stay on this device.
   voteEndpoint: "https://script.google.com/macros/s/AKfycbwqpz3QB9vG-Jt8uThlZAInjkT9w-5cvu0fkqL-2dpk3LDBiHDekKw38NZxGRQF0RTi/exec"
