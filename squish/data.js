@@ -72,40 +72,40 @@ window.SQUISHES = [
 
 /* ============ 6 QUESTIONS ============ */
 window.QUESTIONS = [
-  { q: "Pick a color vibe!", mascot: "lola", a: [
+  { q: "Pick a color vibe!", g: "What colors do they love?", mascot: "lola", a: [
     { t: "Pink & purple", e: "💗", p: ["archie", "lola", "stacy", "claudia"] },
     { t: "Green & leafy", e: "🌿", p: ["wendy", "danny", "avery"] },
     { t: "Blues & teals", e: "💙", p: ["winston", "gordon"] },
     { t: "Warm orange & red", e: "🧡", p: ["fifi", "malcolm", "leonard"] },
     { t: "Sunny yellow", e: "💛", p: ["sunny", "maui", "leonard"] },
     { t: "Browns, black & white", e: "🤎", p: ["connor", "cam", "hans", "benny"] } ] },
-  { q: "Where would you rather hang out?", mascot: "wendy", a: [
+  { q: "Where would you rather hang out?", g: "Where would they rather hang out?", mascot: "wendy", a: [
     { t: "Cozy couch", e: "🛋️", p: ["cam", "hans"] },
     { t: "Enchanted forest", e: "🌲", p: ["malcolm", "fifi", "lola", "benny"] },
     { t: "Pond or ocean", e: "🌊", p: ["wendy", "archie", "gordon", "stacy", "avery"] },
     { t: "Farm or garden", e: "🌻", p: ["connor", "sunny", "claudia"] },
     { t: "Jungle or beach", e: "🏝️", p: ["maui", "leonard", "danny"] },
     { t: "Under the stars", e: "🌙", p: ["winston", "benny"] } ] },
-  { q: "Choose a snack!", mascot: "maui", a: [
+  { q: "Choose a snack!", g: "What's their go-to snack?", mascot: "maui", a: [
     { t: "Fresh fruit", e: "🍓", p: ["maui", "archie", "avery"] },
     { t: "Cookies & milk", e: "🍪", p: ["cam", "connor", "hans"] },
     { t: "Crunchy veggies", e: "🥕", p: ["wendy", "malcolm", "claudia"] },
     { t: "Pizza", e: "🍕", p: ["gordon", "fifi", "leonard", "danny"] },
     { t: "Cupcakes & honey", e: "🍯", p: ["lola", "sunny", "stacy"] },
     { t: "Movie popcorn", e: "🍿", p: ["winston", "benny"] } ] },
-  { q: "Which one sounds most like you?", mascot: "fifi", a: [
+  { q: "Which one sounds most like you?", g: "Which one sounds most like them?", mascot: "fifi", a: [
     { t: "Shy & sweet", e: "🥺", p: ["hans", "malcolm", "cam", "stacy"] },
     { t: "Silly & goofy", e: "🤪", p: ["wendy", "maui", "archie", "avery"] },
     { t: "Brave & bold", e: "💪", p: ["gordon", "leonard", "fifi", "danny"] },
     { t: "Calm & chill", e: "😌", p: ["connor", "cam", "claudia"] },
     { t: "Dreamy & creative", e: "🎨", p: ["lola", "winston", "sunny"] },
     { t: "Curious explorer", e: "🔎", p: ["fifi", "benny", "wendy"] } ] },
-  { q: "Favorite season?", mascot: "hans", a: [
+  { q: "Favorite season?", g: "What's their favorite season?", mascot: "hans", a: [
     { t: "Spring", e: "🌷", p: ["wendy", "lola", "archie", "sunny", "claudia"] },
     { t: "Summer", e: "☀️", p: ["maui", "gordon", "connor", "stacy", "leonard"] },
     { t: "Fall", e: "🍂", p: ["fifi", "hans", "malcolm", "benny"] },
     { t: "Winter", e: "❄️", p: ["cam", "winston", "avery", "danny"] } ] },
-  { q: "What kind of squish do you want to hug?", mascot: "cam", a: [
+  { q: "What kind of squish do you want to hug?", g: "What kind of squish would they love?", mascot: "cam", a: [
     { t: "A furry animal friend", e: "🐾", p: ["cam", "connor", "fifi", "hans", "leonard"] },
     { t: "Something magical", e: "✨", p: ["lola", "winston"] },
     { t: "Something yummy or leafy", e: "🍄", p: ["maui", "malcolm", "claudia"] },
