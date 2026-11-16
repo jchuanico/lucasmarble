@@ -158,9 +158,34 @@
     return SQUISHES.slice().sort(function (x, y) { return sc[y.id] - sc[x.id] || tie[y.id] - tie[x.id]; }).map(function (s) { return { s: s, score: sc[s.id] }; });
   }
 
-  function render(html) {
+  var BASE = location.origin + location.pathname;
+  var TITLE = document.title;
+  function render(html, query, title) {
     app.innerHTML = '<section class="screen">' + html + "</section>";
+    document.title = title || TITLE;
+    try { history.replaceState(null, "", BASE + (query || "")); } catch (e) {}
     window.scrollTo(0, 0);
+  }
+
+  /* ---------------- sharing ---------------- */
+  function toast(html, ms) {
+    var old = document.querySelector(".toast"); if (old) old.remove();
+    var t = document.createElement("div");
+    t.className = "toast"; t.setAttribute("role", "status"); t.innerHTML = html;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, ms || 2600);
+    return t;
+  }
+  function share(text, url) {
+    if (navigator.share) { navigator.share({ title: "Squish Finder", text: text, url: url }).catch(function () {}); return; }
+    var full = text + " " + url;
+    function manual() {
+      var t = toast('Copy this link: <input readonly aria-label="Share link">', 8000), inp = t.querySelector("input");
+      inp.value = full; inp.focus(); inp.select();
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(full).then(function () { toast("Link copied! Paste it anywhere 💗"); }, manual);
+    } else manual();
   }
 
   /* ---------------- screens ---------------- */
@@ -225,26 +250,34 @@
       '<div class="row"><button class="btn" data-go="start">Take the quiz instead ✨</button></div>');
   }
 
-  function detail(id) {
+  function detail(id, shared) {
     var s = byId[id];
     if (!s) return home();
-    vote(id);
+    if (!shared) vote(id); // a shared link is someone else's pick, not a vote
     confetti();
+    var gift = mode === "gift" && !shared;
+    var badge = shared ? "Shared with you 💌" : gift ? "Great gift pick 🎁" : "Your favorite 💗";
+    var shareBtns = '<div class="share-row"><button class="btn alt share" data-share="' + s.id + '">📤 ' + (gift ? "Share this pick" : "Share my result") + "</button>" +
+      (gift ? '<button class="btn alt share" data-go="invite">🎁 Send them the quiz</button>' : "") + "</div>";
     var buttons = CONFIG.stores.map(function (st, i) {
       return '<a class="btn buy' + (i ? " alt" : "") + '" target="_blank" rel="sponsored noopener" href="' + buyUrl(s, st) + '">' +
         st.flag + " Buy on " + st.name + "</a>";
     }).join("");
-    render('<div class="detail">' +
+    render((shared ? '<div class="center shared-cta"><p class="sub">Someone shared this squish with you! Which one are <b>you</b>?</p>' +
+        '<button class="btn" data-go="start">Find yours ✨</button></div>' : "") +
+      '<div class="detail">' +
       '<div class="center main-art">' + squishSVG(s, "happy", "jump") +
       '<div class="poses"><figure>' + squishSVG(s, "open") + "<figcaption>Hello!</figcaption></figure>" +
       "<figure>" + squishSVG(s, "wink") + "<figcaption>Wink!</figcaption></figure>" +
       "<figure>" + squishSVG(s, "happy") + "<figcaption>Hug me!</figcaption></figure></div></div>" +
-      '<div><span class="badge">' + (mode === "gift" ? "Great gift pick 🎁" : "Your favorite 💗") + '</span><h2>' + s.name + '</h2><p class="bio">' + s.bio + "</p>" +
+      '<div><span class="badge">' + badge + '</span><h2>' + s.name + '</h2><p class="bio">' + s.bio + "</p>" +
       '<ul class="facts"><li>🏷️ <b>Squad:</b> ' + s.squad + "</li><li>💖 <b>Loves:</b> " + s.fav + "</li></ul>" +
       '<div class="buy-row">' + buttons + "</div>" +
       '<p class="tips"><b>🛍️ Shopping tips:</b> Squishmallows come in several sizes, commonly 5", 8", 12", 16" and 24". Big ones are best for hugging, small ones for collecting. Check the size in the listing before you buy.</p>' +
-      '<p class="note">🇨🇦 Canada? Use Amazon.ca. 🇺🇸 USA? Use Amazon.com. Your vote was counted! Prices and stock vary by store.</p></div></div>' +
-      '<div class="row"><button class="btn alt" data-go="poll">📊 See the poll</button><button class="btn alt" data-go="start">Retake quiz</button></div>');
+      shareBtns +
+      '<p class="note">🇨🇦 Canada? Use Amazon.ca. 🇺🇸 USA? Use Amazon.com. ' + (shared ? "" : "Your vote was counted! ") + 'Prices and stock vary by store.</p></div></div>' +
+      '<div class="row"><button class="btn alt" data-go="poll">📊 See the poll</button><button class="btn alt" data-go="start">' + (shared ? "Take the quiz" : "Retake quiz") + "</button></div>",
+      "?s=" + s.id, s.name + " | Squish Finder");
   }
 
   /* ---------------- voting / poll ---------------- */
@@ -379,6 +412,11 @@
       return;
     }
     if (t.dataset.fav) return detail(t.dataset.fav);
+    if (t.dataset.share) {
+      var sh = byId[t.dataset.share];
+      return share(mode === "gift" ? "I think " + sh.name + " is the perfect Squishmallow gift 🎁 Find your own match:" :
+        "I got " + sh.name + "! 💗 Which Squishmallow are you? Take the 6-question quiz:", BASE + "?s=" + sh.id);
+    }
     if (t.dataset.who) { mode = t.dataset.who; step = 0; answers = []; return question(); }
     switch (t.dataset.go) {
       case "start": who(); break;
@@ -386,13 +424,16 @@
       case "back": if (step === 0) who(); else { step--; answers.length = step; question(); } break;
       case "all": all(); break;
       case "poll": poll(); break;
+      case "invite": share("Take this quick quiz so I know which Squishmallow to get you 🎁", BASE); break;
     }
   });
   document.getElementById("homeBtn").addEventListener("click", home);
   document.getElementById("pollBtn").addEventListener("click", poll);
 
   // expose for tests
-  window.__squish = { scores: scores, ranked: ranked, squishSVG: squishSVG, buyUrl: buyUrl, setAnswers: function (a) { answers = a.slice(); } };
+  window.__squish = { scores: scores, ranked: ranked, squishSVG: squishSVG, buyUrl: buyUrl, setAnswers: function (a) { answers = a.slice(); }, share: share };
 
-  home();
+  // a shared link (?s=wendy) opens that squish; anything else starts at home
+  var sid = (location.search.match(/[?&]s=([a-z]+)/) || [])[1];
+  if (sid && byId[sid]) detail(sid, true); else home();
 })();
