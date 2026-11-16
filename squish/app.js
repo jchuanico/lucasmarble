@@ -100,7 +100,7 @@
   /* ---------------- links ---------------- */
   function buyUrl(s) {
     var q = encodeURIComponent("Squishmallows " + s.name);
-    return "https://www.amazon.com/s?k=" + q + (CONFIG.amazonTag ? "&tag=" + encodeURIComponent(CONFIG.amazonTag) : "");
+    return "https://www.amazon.ca/s?k=" + q + (CONFIG.amazonTag ? "&tag=" + encodeURIComponent(CONFIG.amazonTag) : "");
   }
   document.getElementById("disclosure").textContent = CONFIG.amazonTag
     ? "As an Amazon Associate we earn from qualifying purchases. Buying through our links supports this site at no extra cost to you."
