@@ -73,6 +73,43 @@
       front += '<path d="M12 104 C10 40 58 12 100 12 C142 12 190 40 188 104 C150 90 50 90 12 104Z" fill="' + a + '"/>';
       front += '<circle cx="62" cy="50" r="11" fill="#fff"/><circle cx="104" cy="34" r="9" fill="#fff"/><circle cx="144" cy="58" r="13" fill="#fff"/><circle cx="92" cy="72" r="7" fill="#fff"/><circle cx="34" cy="84" r="6" fill="#fff"/><circle cx="168" cy="88" r="5" fill="#fff"/>';
     }
+    if (t === "bigfoot") {
+      back += '<path d="M78 46 Q86 18 96 42 Q102 14 110 42 Q120 20 124 48Z" fill="' + a + '"/>';
+      back += '<ellipse cx="22" cy="118" rx="12" ry="22" fill="' + a + '"/><ellipse cx="178" cy="118" rx="12" ry="22" fill="' + a + '"/>';
+    }
+    if (t === "duck") {
+      front += '<path d="M18 112 C18 66 50 40 100 40 C150 40 182 66 182 112 C150 98 50 98 18 112Z" fill="' + a + '"/>';
+      front += '<path d="M24 114 C60 102 140 102 176 114" stroke="#fff" stroke-width="6" fill="none"/>';
+      front += '<ellipse cx="100" cy="126" rx="22" ry="11" fill="#ffb02e"/><path d="M84 126 q16 7 32 0" stroke="#d58a10" stroke-width="2" fill="none"/>';
+      ey = 82; showMouth = false;
+    }
+    if (t === "squid") {
+      back += '<path d="M60 52 L100 0 L140 52Z" fill="' + a + '"/>';
+      for (var k = 0; k < 6; k++) back += '<rect x="' + (34 + k * 23) + '" y="150" width="16" height="44" rx="8" fill="' + (k % 2 ? a : b) + '"/>';
+    }
+    if (t === "dino") {
+      var sp = "";
+      for (var j = 0; j < 5; j++) { var sx = 52 + j * 24; sp += '<polygon points="' + (sx - 12) + ',' + (54 - (j === 2 ? 4 : 0) + Math.abs(j - 2) * 6) + ' ' + sx + ',' + (22 + Math.abs(j - 2) * 8) + ' ' + (sx + 12) + ',' + (54 + Math.abs(j - 2) * 6) + '" fill="' + a + '"/>'; }
+      back += sp;
+    }
+    if (t === "bee") {
+      back += '<ellipse cx="44" cy="54" rx="26" ry="18" fill="#dff3ff" stroke="#b9dcf2" stroke-width="2"/><ellipse cx="156" cy="54" rx="26" ry="18" fill="#dff3ff" stroke="#b9dcf2" stroke-width="2"/>';
+      back += '<path d="M84 44 Q76 18 64 14" stroke="' + a + '" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="64" cy="14" r="6" fill="' + a + '"/>';
+      back += '<path d="M116 44 Q124 18 136 14" stroke="' + a + '" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="136" cy="14" r="6" fill="' + a + '"/>';
+      front += '<path d="M26 82 C60 72 140 72 174 82 L170 70 C140 58 60 58 30 70Z" fill="' + a + '"/>';
+      front += '<path d="M22 164 C60 176 140 176 178 164 L172 156 C140 166 60 166 28 156Z" fill="' + a + '"/>';
+    }
+    if (t === "lion") {
+      var m = "";
+      for (var q = 0; q < 16; q++) { var ang2 = q / 16 * Math.PI * 2; m += '<circle cx="' + (100 + Math.cos(ang2) * 84).toFixed(1) + '" cy="' + (112 + Math.sin(ang2) * 76).toFixed(1) + '" r="20" fill="' + a + '"/>'; }
+      back += m + '<circle cx="54" cy="52" r="13" fill="' + b + '"/><circle cx="146" cy="52" r="13" fill="' + b + '"/>';
+    }
+    if (t === "beet") {
+      back += '<path d="M100 50 C80 20 70 8 82 2 C96 8 100 30 100 50Z" fill="#4caf50"/><path d="M100 50 C120 20 130 8 118 2 C104 8 100 30 100 50Z" fill="#3d9a41"/>';
+      front += '<path d="M30 74 C60 56 140 56 170 74" stroke="' + a + '" stroke-width="10" fill="none" stroke-linecap="round"/>';
+      front += '<path d="M140 62 l18 -14 l2 22Z M140 62 l-4 -22 l20 10Z" fill="' + a + '"/><circle cx="142" cy="60" r="6" fill="#ff6fb5"/>';
+    }
+    (s.spots || []).forEach(function (p) { front += '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="' + p[2] + '" ry="' + p[3] + '" fill="' + p[4] + '"/>'; });
 
     var body = '<path d="M100 40C152 40 182 70 182 116C182 162 150 180 100 180C50 180 18 162 18 116C18 70 48 40 100 40Z" fill="' + b + '"/>';
     var belly = s.belly ? '<ellipse cx="100" cy="146" rx="' + (t === "hedgehog" ? 62 : 50) + '" ry="' + (t === "hedgehog" ? 44 : 30) + '" fill="' + s.belly + '"/>' : "";
@@ -98,11 +135,12 @@
   }
 
   /* ---------------- links ---------------- */
-  function buyUrl(s) {
-    var q = encodeURIComponent("Squishmallows " + s.name);
-    return "https://www.amazon.ca/s?k=" + q + (CONFIG.amazonTag ? "&tag=" + encodeURIComponent(CONFIG.amazonTag) : "");
+  function buyUrl(s, st) {
+    st = st || CONFIG.stores[0];
+    var q = encodeURIComponent("Squishmallows " + s.name + " plush");
+    return "https://" + st.domain + "/s?k=" + q + (st.tag ? "&tag=" + encodeURIComponent(st.tag) : "");
   }
-  document.getElementById("disclosure").textContent = CONFIG.amazonTag
+  document.getElementById("disclosure").textContent = CONFIG.stores.some(function (st) { return st.tag; })
     ? "As an Amazon Associate we earn from qualifying purchases. Buying through our links supports this site at no extra cost to you."
     : "Shopping links may earn us a small commission at no extra cost to you.";
 
@@ -131,7 +169,7 @@
     render('<div class="center">' +
       '<div class="hero-row">' + squishSVG(byId.archie, "happy") + squishSVG(byId.cam, "open") + squishSVG(byId.wendy, "wink") + "</div>" +
       '<h1>Find your <span class="hl">favorite squish!</span></h1>' +
-      '<p class="sub">6 quick questions. 12 squishy friends. 1 perfect match.</p>' +
+      '<p class="sub">6 quick questions. ' + SQUISHES.length + ' squishy friends. 1 perfect match.</p>' +
       '<div class="row"><button class="btn" data-go="start">Start the quiz ✨</button>' +
       '<button class="btn alt" data-go="all">Browse all squishes</button></div></div>');
   }
@@ -180,8 +218,9 @@
     if (!s) return home();
     vote(id);
     confetti();
-    var extra = (CONFIG.extraStores || []).map(function (st) {
-      return '<a class="btn alt" target="_blank" rel="sponsored noopener" href="' + st.url.replace("{q}", encodeURIComponent("Squishmallows " + s.name)) + '">Buy at ' + st.name + "</a>";
+    var buttons = CONFIG.stores.map(function (st, i) {
+      return '<a class="btn buy' + (i ? " alt" : "") + '" target="_blank" rel="sponsored noopener" href="' + buyUrl(s, st) + '">' +
+        st.flag + " Buy on " + st.name + "</a>";
     }).join("");
     render('<div class="detail">' +
       '<div class="center main-art">' + squishSVG(s, "happy", "jump") +
@@ -190,8 +229,8 @@
       "<figure>" + squishSVG(s, "happy") + "<figcaption>Hug me!</figcaption></figure></div></div>" +
       '<div><span class="badge">Your favorite 💗</span><h2>' + s.name + '</h2><p class="bio">' + s.bio + "</p>" +
       '<ul class="facts"><li>🏷️ <b>Squad:</b> ' + s.squad + "</li><li>💖 <b>Loves:</b> " + s.fav + "</li></ul>" +
-      '<div class="row" style="justify-content:flex-start"><a class="btn buy" target="_blank" rel="sponsored noopener" href="' + buyUrl(s) + '">🛒 Buy ' + s.name.split(" ")[0] + "</a>" + extra + "</div>" +
-      '<p class="note">Your vote was counted! Prices and availability vary by store.</p></div></div>' +
+      '<div class="buy-row">' + buttons + "</div>" +
+      '<p class="note">🇨🇦 Canada? Use Amazon.ca. 🇺🇸 USA? Use Amazon.com. Your vote was counted! Prices and stock vary by store.</p></div></div>' +
       '<div class="row"><button class="btn alt" data-go="poll">📊 See the poll</button><button class="btn alt" data-go="start">Retake quiz</button></div>');
   }
 
