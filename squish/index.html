@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squish Finder</title>
+<meta name="description" content="Answer 6 quick questions to find your favorite squishmallow, then vote in the poll!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><span>💗</span><span>⭐</span><span>💜</span><span>☁️</span><span>💛</span><span>💙</span><span>⭐</span><span>💗</span></div>
+
+<header class="top">
+  <button class="logo" id="homeBtn" aria-label="Go to start">🧸 Squish Finder</button>
+  <div class="top-actions">
+    <button class="chip" id="pollBtn">📊 Poll</button>
+    <button class="chip" id="musicBtn" aria-pressed="false" title="Toggle happy music">🔇 Music</button>
+  </div>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<footer class="foot">
+  <p id="disclosure"></p>
+  <p>Fan-made quiz. Not affiliated with or endorsed by Jazwares or Squishmallows. Illustrations are original fan art; bios are fan-written.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
