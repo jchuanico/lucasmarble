@@ -145,7 +145,7 @@
     : "Shopping links may earn us a small commission at no extra cost to you.";
 
   /* ---------------- quiz state ---------------- */
-  var step = 0, answers = [];
+  var step = 0, answers = [], mode = "me";
   function scores() {
     var sc = {};
     SQUISHES.forEach(function (s) { sc[s.id] = 0; });
@@ -168,17 +168,27 @@
     step = 0; answers = [];
     render('<div class="center">' +
       '<div class="hero-row">' + squishSVG(byId.archie, "happy") + squishSVG(byId.cam, "open") + squishSVG(byId.wendy, "wink") + "</div>" +
-      '<h1>Find your <span class="hl">favorite squish!</span></h1>' +
-      '<p class="sub">6 quick questions. ' + SQUISHES.length + ' squishy friends. 1 perfect match.</p>' +
+      '<h1>Find the perfect <span class="hl">Squishmallow</span></h1>' +
+      '<p class="sub">A 6-question quiz for collectors and gift-shoppers. ' + SQUISHES.length + ' squishes, one perfect match, for you or someone you love.</p>' +
       '<div class="row"><button class="btn" data-go="start">Start the quiz ✨</button>' +
       '<button class="btn alt" data-go="all">Browse all squishes</button></div></div>');
   }
 
+  function who() {
+    render('<div class="center"><h2>Who is it for?</h2><p class="sub">We\'ll word the questions to fit.</p></div>' +
+      '<div class="who">' +
+      '<button class="ans" data-who="me">' + squishSVG(byId.cam, "happy") + '<b>For me</b><span class="note">I\'m picking my own favorite</span></button>' +
+      '<button class="ans" data-who="gift" style="animation-delay:.06s">' + squishSVG(byId.lola, "wink") + '<b>It\'s a gift 🎁</b><span class="note">I\'m shopping for someone else</span></button>' +
+      "</div>" +
+      '<div class="center"><button class="back" data-go="home">← Back</button></div>');
+  }
+
   function question() {
     var Q = QUESTIONS[step], pct = (step / QUESTIONS.length) * 100;
+    var qText = mode === "gift" && Q.g ? Q.g : Q.q;
     render('<div class="progress" role="progressbar" aria-valuenow="' + step + '" aria-valuemax="6"><i style="width:' + pct + '%"></i></div>' +
       '<div class="qhead">' + squishSVG(byId[Q.mascot], step % 2 ? "happy" : "open") +
-      '<div class="center"><div class="qnum">Question ' + (step + 1) + " of " + QUESTIONS.length + "</div><h2>" + Q.q + "</h2></div></div>" +
+      '<div class="center"><div class="qnum">Question ' + (step + 1) + " of " + QUESTIONS.length + "</div><h2>" + qText + "</h2></div></div>" +
       '<div class="answers">' + Q.a.map(function (a, i) {
         return '<button class="ans" style="animation-delay:' + i * 0.05 + 's" data-ans="' + i + '"><span class="em">' + a.e + "</span>" + a.t + "</button>";
       }).join("") + "</div>" +
@@ -190,7 +200,9 @@
     var r = ranked(), top = r.slice(0, 3), rest = r.slice(3);
     var maxPossible = QUESTIONS.length;
     confetti();
-    render('<div class="center"><h2>Your top squish matches! 🎉</h2><p class="sub">Tap the one that is <b>your</b> favorite.</p></div>' +
+    var gift = mode === "gift";
+    render('<div class="center"><h2>' + (gift ? "Top gift picks! 🎁" : "Your top squish matches! 🎉") + '</h2><p class="sub">' +
+      (gift ? "Tap the one you think they'll love most." : "Tap the one that is <b>your</b> favorite.") + "</p></div>" +
       '<div class="cards">' + top.map(function (x, i) {
         return '<div class="card' + (i === 0 ? " top1" : "") + '" style="animation-delay:' + i * 0.1 + 's">' +
           (i === 0 ? '<span class="badge">Best match</span>' : "") + squishSVG(x.s, i === 0 ? "happy" : "open") +
@@ -227,9 +239,10 @@
       '<div class="poses"><figure>' + squishSVG(s, "open") + "<figcaption>Hello!</figcaption></figure>" +
       "<figure>" + squishSVG(s, "wink") + "<figcaption>Wink!</figcaption></figure>" +
       "<figure>" + squishSVG(s, "happy") + "<figcaption>Hug me!</figcaption></figure></div></div>" +
-      '<div><span class="badge">Your favorite 💗</span><h2>' + s.name + '</h2><p class="bio">' + s.bio + "</p>" +
+      '<div><span class="badge">' + (mode === "gift" ? "Great gift pick 🎁" : "Your favorite 💗") + '</span><h2>' + s.name + '</h2><p class="bio">' + s.bio + "</p>" +
       '<ul class="facts"><li>🏷️ <b>Squad:</b> ' + s.squad + "</li><li>💖 <b>Loves:</b> " + s.fav + "</li></ul>" +
       '<div class="buy-row">' + buttons + "</div>" +
+      '<p class="tips"><b>🛍️ Shopping tips:</b> Squishmallows come in several sizes, commonly 5", 8", 12", 16" and 24". Big ones are best for hugging, small ones for collecting. Check the size in the listing before you buy.</p>' +
       '<p class="note">🇨🇦 Canada? Use Amazon.ca. 🇺🇸 USA? Use Amazon.com. Your vote was counted! Prices and stock vary by store.</p></div></div>' +
       '<div class="row"><button class="btn alt" data-go="poll">📊 See the poll</button><button class="btn alt" data-go="start">Retake quiz</button></div>');
   }
@@ -366,9 +379,11 @@
       return;
     }
     if (t.dataset.fav) return detail(t.dataset.fav);
+    if (t.dataset.who) { mode = t.dataset.who; step = 0; answers = []; return question(); }
     switch (t.dataset.go) {
-      case "start": step = 0; answers = []; question(); break;
-      case "back": if (step === 0) home(); else { step--; answers.length = step; question(); } break;
+      case "start": who(); break;
+      case "home": home(); break;
+      case "back": if (step === 0) who(); else { step--; answers.length = step; question(); } break;
       case "all": all(); break;
       case "poll": poll(); break;
     }
